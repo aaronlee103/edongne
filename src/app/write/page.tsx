@@ -1,7 +1,8 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
+import { createClient } from '@/lib/supabase-client'
 
 const CATEGORIES = [
   { key: 'free', label: '자유' },
@@ -14,14 +15,42 @@ const CATEGORIES = [
 
 export default function WritePage() {
   const router = useRouter()
+  const supabase = createClient()
   const [category, setCategory] = useState('free')
   const [title, setTitle] = useState('')
   const [content, setContent] = useState('')
+  const [loading, setLoading] = useState(false)
+  const [user, setUser] = useState<any>(null)
+
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data }) => {
+      if (!data.user) {
+        router.push('/auth')
+      } else {
+        setUser(data.user)
+      }
+    })
+  }, [])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    // TODO: Supabase에 저장
-    alert('게시글이 작성되었습니다! (Supabase 연결 후 실제 저장)')
+    if (!user) return router.push('/auth')
+
+    setLoading(true)
+    const { error } = await supabase.from('posts').insert({
+      user_id: user.id,
+      type: 'community',
+      category,
+      title,
+      content,
+    })
+
+    if (error) {
+      alert('글 작성에 실패했습니다: ' + error.message)
+      setLoading(false)
+      return
+    }
+
     router.push('/board')
   }
 
@@ -69,9 +98,10 @@ export default function WritePage() {
         <div className="flex items-center gap-3 pt-4">
           <button
             type="submit"
-            className="bg-black text-white px-6 py-2.5 rounded-full text-sm font-medium hover:bg-gray-800 transition-colors"
+            disabled={loading}
+            className="bg-black text-white px-6 py-2.5 rounded-full text-sm font-medium hover:bg-gray-800 transition-colors disabled:opacity-50"
           >
-            게시하기
+            {loading ? '게시 중...' : '게시하기'}
           </button>
           <button
             type="button"

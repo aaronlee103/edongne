@@ -1,7 +1,8 @@
 'use client'
 
 import Link from 'next/link'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+import { createClient } from '@/lib/supabase-client'
 
 const CATEGORIES = [
   { key: 'all', label: '전체' },
@@ -13,24 +14,47 @@ const CATEGORIES = [
   { key: 'housing', label: '렌트/룸메' },
 ]
 
-// 목업 데이터 (Supabase 연결 전)
-const MOCK_POSTS = [
-  { id: '1', category: 'qna', title: '플러싱에서 맨하탄 출퇴근 어떤가요?', nickname: '맨하탄곰', comments: 23, votes: 45, date: '3시간 전' },
-  { id: '2', category: 'free', title: '뉴저지 포트리 한인 마트 추천', nickname: '저지여우', comments: 15, votes: 32, date: '5시간 전' },
-  { id: '3', category: 'qna', title: 'H1B 변호사 추천 부탁드립니다', nickname: '비자토끼', comments: 31, votes: 28, date: '8시간 전' },
-  { id: '4', category: 'housing', title: '우드사이드 1BR 월세 얼마가 적당한가요?', nickname: '퀸즈펭귄', comments: 19, votes: 22, date: '12시간 전' },
-  { id: '5', category: 'info', title: '핸디맨 vs 건축업체, 어떤 경우에 뭘 써야하나', nickname: '집수리부엉이', comments: 27, votes: 41, date: '1일 전' },
-  { id: '6', category: 'buysell', title: '이사 가구 정리합니다 (맨하탄 픽업)', nickname: '이사고양이', comments: 8, votes: 12, date: '1일 전' },
-  { id: '7', category: 'jobs', title: '[채용] 포트리 한식당 서버 구합니다', nickname: '사장님사슴', comments: 3, votes: 5, date: '2일 전' },
-  { id: '8', category: 'free', title: '뉴욕 벚꽃 시즌 언제부터인가요?', nickname: '봄강아지', comments: 12, votes: 18, date: '2일 전' },
-]
-
 export default function BoardPage() {
   const [activeCategory, setActiveCategory] = useState('all')
+  const [posts, setPosts] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
+  const supabase = createClient()
 
-  const filteredPosts = activeCategory === 'all'
-    ? MOCK_POSTS
-    : MOCK_POSTS.filter(p => p.category === activeCategory)
+  useEffect(() => {
+    fetchPosts()
+  }, [activeCategory])
+
+  async function fetchPosts() {
+    setLoading(true)
+    let query = supabase
+      .from('posts')
+      .select('*, votes(value), comments(id)')
+      .eq('type', 'community')
+      .order('created_at', { ascending: false })
+      .limit(20)
+
+    if (activeCategory !== 'all') {
+      query = query.eq('category', activeCategory)
+    }
+
+    const { data, error } = await query
+    if (!error && data) {
+      setPosts(data.map((p: any) => ({
+        ...p,
+        vote_score: p.votes?.reduce((sum: number, v: any) => sum + v.value, 0) || 0,
+        comment_count: p.comments?.length || 0,
+      })))
+    }
+    setLoading(false)
+  }
+
+  function timeAgo(date: string) {
+    const seconds = Math.floor((Date.now() - new Date(date).getTime()) / 1000)
+    if (seconds < 60) return '방금'
+    if (seconds < 3600) return `${Math.floor(seconds / 60)}분 전`
+    if (seconds < 86400) return `${Math.floor(seconds / 3600)}시간 전`
+    return `${Math.floor(seconds / 86400)}일 전`
+  }
 
   return (
     <div className="max-w-4xl mx-auto px-4 py-8">
@@ -62,37 +86,45 @@ export default function BoardPage() {
       </div>
 
       {/* 게시글 목록 */}
-      <div className="divide-y divide-border">
-        {filteredPosts.map((post) => (
-          <Link
-            key={post.id}
-            href={`/post/${post.id}`}
-            className="block py-4 hover:bg-gray-50 px-2 -mx-2 rounded transition-colors"
-          >
-            <div className="flex items-start gap-3">
-              {/* 투표 */}
-              <div className="flex flex-col items-center text-xs text-muted pt-0.5 w-8 shrink-0">
-                <span>▲</span>
-                <span className="font-medium text-primary">{post.votes}</span>
-              </div>
-
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2 mb-1">
-                  <span className="text-xs px-1.5 py-0.5 bg-gray-100 rounded text-muted">
-                    {CATEGORIES.find(c => c.key === post.category)?.label}
-                  </span>
-                </div>
-                <h3 className="text-sm font-medium truncate">{post.title}</h3>
-                <div className="flex items-center gap-3 mt-1.5 text-xs text-muted">
-                  <span>{post.nickname}</span>
-                  <span>{post.date}</span>
-                  <span>💬 {post.comments}</span>
-                </div>
-              </div>
-            </div>
+      {loading ? (
+        <div className="text-center py-12 text-muted text-sm">불러오는 중...</div>
+      ) : posts.length === 0 ? (
+        <div className="text-center py-12">
+          <p className="text-muted text-sm mb-4">아직 게시글이 없습니다.</p>
+          <Link href="/write" className="text-sm bg-black text-white px-4 py-1.5 rounded-full hover:bg-gray-800">
+            첫 글 작성하기
           </Link>
-        ))}
-      </div>
+        </div>
+      ) : (
+        <div className="divide-y divide-border">
+          {posts.map((post) => (
+            <Link
+              key={post.id}
+              href={`/post/${post.id}`}
+              className="block py-4 hover:bg-gray-50 px-2 -mx-2 rounded transition-colors"
+            >
+              <div className="flex items-start gap-3">
+                <div className="flex flex-col items-center text-xs text-muted pt-0.5 w-8 shrink-0">
+                  <span>▲</span>
+                  <span className="font-medium text-primary">{post.vote_score}</span>
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 mb-1">
+                    <span className="text-xs px-1.5 py-0.5 bg-gray-100 rounded text-muted">
+                      {CATEGORIES.find(c => c.key === post.category)?.label || post.category}
+                    </span>
+                  </div>
+                  <h3 className="text-sm font-medium truncate">{post.title}</h3>
+                  <div className="flex items-center gap-3 mt-1.5 text-xs text-muted">
+                    <span>{timeAgo(post.created_at)}</span>
+                    <span>💬 {post.comment_count}</span>
+                  </div>
+                </div>
+              </div>
+            </Link>
+          ))}
+        </div>
+      )}
     </div>
   )
 }

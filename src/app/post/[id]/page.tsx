@@ -1,41 +1,90 @@
 'use client'
 
 import Link from 'next/link'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+import { useParams } from 'next/navigation'
+import { createClient } from '@/lib/supabase-client'
 
-// 목업 데이터
-const MOCK_POST = {
-  id: '1',
-  title: '플러싱에서 맨하탄 출퇴근 어떤가요?',
-  content: `안녕하세요, 올해 봄에 뉴욕으로 이사 계획 중입니다.
-
-현재 플러싱 쪽으로 집을 알아보고 있는데, 맨하탄 미드타운으로 출퇴근하시는 분들 경험이 궁금합니다.
-
-1. 7호선 실제 출퇴근 시간이 어느 정도인가요?
-2. LIRR을 이용하시는 분도 계신가요?
-3. 플러싱 외에 출퇴근하기 좋은 퀸즈 동네 추천도 부탁드립니다.
-
-감사합니다!`,
-  category: '질문답변',
-  nickname: '맨하탄곰',
-  avatar: 'bear',
-  date: '2025.03.15 14:30',
-  views: 342,
-  votes: 45,
+const CATEGORIES: Record<string, string> = {
+  free: '자유', qna: '질문답변', info: '정보', buysell: '사고팔고',
+  jobs: '구인구직', housing: '렌트/룸메', topic: '토픽', editor: '에디터',
 }
 
-const MOCK_COMMENTS = [
-  { id: '1', nickname: '퀸즈여우', avatar: 'fox', content: '7호선 러시아워 기준 약 40-50분 정도 걸려요. 플러싱이 시발역이라 자리 앉을 수 있는 게 큰 장점입니다.', date: '3시간 전', votes: 12 },
-  { id: '2', nickname: '출퇴근토끼', avatar: 'rabbit', content: 'LIRR 쓰면 20분이면 펜스테이션 도착합니다. 월정액 좀 비싸지만 체감 시간이 확 줄어요.', date: '2시간 전', votes: 8 },
-  { id: '3', nickname: '우드사이드펭귄', avatar: 'penguin', content: '우드사이드도 추천합니다. 7호선 + LIRR 둘 다 이용 가능하고, 플러싱보다 맨하탄 가까워요.', date: '1시간 전', votes: 15 },
-]
-
 export default function PostDetailPage() {
+  const params = useParams()
+  const postId = params.id as string
+  const supabase = createClient()
+  const [post, setPost] = useState<any>(null)
+  const [comments, setComments] = useState<any[]>([])
   const [commentText, setCommentText] = useState('')
+  const [user, setUser] = useState<any>(null)
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data }) => setUser(data.user))
+    fetchPost()
+    fetchComments()
+  }, [postId])
+
+  async function fetchPost() {
+    const { data } = await supabase
+      .from('posts')
+      .select('*, votes(value)')
+      .eq('id', postId)
+      .single()
+    if (data) {
+      setPost({
+        ...data,
+        vote_score: data.votes?.reduce((sum: number, v: any) => sum + v.value, 0) || 0,
+      })
+      // 조회수 증가
+      await supabase.from('posts').update({ views: (data.views || 0) + 1 }).eq('id', postId)
+    }
+    setLoading(false)
+  }
+
+  async function fetchComments() {
+    const { data } = await supabase
+      .from('comments')
+      .select('*')
+      .eq('post_id', postId)
+      .order('created_at', { ascending: true })
+    if (data) setComments(data)
+  }
+
+  async function handleComment(e: React.FormEvent) {
+    e.preventDefault()
+    if (!user) return alert('로그인이 필요합니다.')
+    if (!commentText.trim()) return
+
+    const { error } = await supabase.from('comments').insert({
+      post_id: postId,
+      user_id: user.id,
+      content: commentText.trim(),
+    })
+
+    if (error) {
+      alert('댓글 작성 실패: ' + error.message)
+      return
+    }
+
+    setCommentText('')
+    fetchComments()
+  }
+
+  function timeAgo(date: string) {
+    const seconds = Math.floor((Date.now() - new Date(date).getTime()) / 1000)
+    if (seconds < 60) return '방금'
+    if (seconds < 3600) return `${Math.floor(seconds / 60)}분 전`
+    if (seconds < 86400) return `${Math.floor(seconds / 3600)}시간 전`
+    return `${Math.floor(seconds / 86400)}일 전`
+  }
+
+  if (loading) return <div className="max-w-3xl mx-auto px-4 py-16 text-center text-muted text-sm">불러오는 중...</div>
+  if (!post) return <div className="max-w-3xl mx-auto px-4 py-16 text-center text-muted text-sm">게시글을 찾을 수 없습니다.</div>
 
   return (
     <div className="max-w-3xl mx-auto px-4 py-8">
-      {/* 뒤로가기 */}
       <Link href="/board" className="text-sm text-muted hover:text-primary mb-6 inline-block">
         ← 커뮤니티로 돌아가기
       </Link>
@@ -43,63 +92,58 @@ export default function PostDetailPage() {
       {/* 게시글 */}
       <article className="mb-8">
         <div className="flex items-center gap-2 mb-3">
-          <span className="text-xs px-2 py-0.5 bg-gray-100 rounded">{MOCK_POST.category}</span>
+          <span className="text-xs px-2 py-0.5 bg-gray-100 rounded">{CATEGORIES[post.category] || post.category}</span>
         </div>
-        <h1 className="text-2xl font-bold mb-4">{MOCK_POST.title}</h1>
+        <h1 className="text-2xl font-bold mb-4">{post.title}</h1>
         <div className="flex items-center gap-3 text-sm text-muted mb-6">
-          <span className="font-medium text-primary">{MOCK_POST.nickname}</span>
-          <span>{MOCK_POST.date}</span>
-          <span>조회 {MOCK_POST.views}</span>
+          <span>{new Date(post.created_at).toLocaleDateString('ko-KR')}</span>
+          <span>조회 {post.views || 0}</span>
         </div>
         <div className="prose prose-sm max-w-none whitespace-pre-wrap text-sm leading-relaxed">
-          {MOCK_POST.content}
+          {post.content}
         </div>
 
-        {/* 투표 */}
         <div className="flex items-center gap-4 mt-6 pt-6 border-t border-border">
-          <button className="vote-btn text-lg">▲</button>
-          <span className="font-bold">{MOCK_POST.votes}</span>
-          <button className="vote-btn text-lg">▼</button>
-          <button className="ml-auto text-sm text-muted hover:text-primary">🔖 북마크</button>
-          <button className="text-sm text-muted hover:text-red-500">🚨 신고</button>
+          <span className="font-bold">▲ {post.vote_score}</span>
         </div>
       </article>
 
       {/* 댓글 */}
       <section>
-        <h2 className="font-bold mb-4">댓글 {MOCK_COMMENTS.length}개</h2>
+        <h2 className="font-bold mb-4">댓글 {comments.length}개</h2>
 
-        {/* 댓글 입력 */}
-        <div className="mb-6">
+        <form onSubmit={handleComment} className="mb-6">
           <textarea
             value={commentText}
             onChange={(e) => setCommentText(e.target.value)}
-            placeholder="댓글을 남겨보세요"
+            placeholder={user ? '댓글을 남겨보세요' : '로그인 후 댓글을 작성할 수 있습니다'}
             className="w-full border border-border rounded-lg p-3 text-sm resize-none focus:outline-none focus:border-black transition-colors"
             rows={3}
+            disabled={!user}
           />
           <div className="flex justify-end mt-2">
-            <button className="text-sm bg-black text-white px-4 py-1.5 rounded-full hover:bg-gray-800 transition-colors">
+            <button
+              type="submit"
+              disabled={!user || !commentText.trim()}
+              className="text-sm bg-black text-white px-4 py-1.5 rounded-full hover:bg-gray-800 transition-colors disabled:opacity-50"
+            >
               댓글 작성
             </button>
           </div>
-        </div>
+        </form>
 
-        {/* 댓글 목록 */}
         <div className="space-y-4">
-          {MOCK_COMMENTS.map((comment) => (
+          {comments.map((comment) => (
             <div key={comment.id} className="py-4 border-b border-border">
               <div className="flex items-center gap-2 mb-2">
-                <span className="text-sm font-medium">{comment.nickname}</span>
-                <span className="text-xs text-muted">{comment.date}</span>
+                <span className="text-xs text-muted">{timeAgo(comment.created_at)}</span>
               </div>
               <p className="text-sm leading-relaxed">{comment.content}</p>
-              <div className="flex items-center gap-3 mt-2">
-                <button className="text-xs text-muted hover:text-primary">▲ {comment.votes}</button>
-                <button className="text-xs text-muted hover:text-primary">답글</button>
-              </div>
             </div>
           ))}
+          {comments.length === 0 && (
+            <p className="text-sm text-muted text-center py-4">아직 댓글이 없습니다. 첫 댓글을 남겨보세요!</p>
+          )}
         </div>
       </section>
     </div>
