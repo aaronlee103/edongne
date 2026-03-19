@@ -18,11 +18,11 @@ export async function GET(request: Request) {
             return cookieStore.getAll()
           },
           setAll(cookiesToSet: { name: string; value: string; options?: Record<string, unknown> }[]) {
-            try {
-              cookiesToSet.forEach(({ name, value, options }) =>
+            cookiesToSet.forEach(({ name, value, options }) => {
+              try {
                 cookieStore.set(name, value, options as any)
-              )
-            } catch {}
+              } catch {}
+            })
           },
         },
       }
@@ -32,8 +32,8 @@ export async function GET(request: Request) {
     if (!error) {
       return NextResponse.redirect(`${origin}${next}`)
     }
+    console.error('Auth callback error:', error.message)
   }
 
-  // 에러 시 로그인 페이지로 리다이렉트
   return NextResponse.redirect(`${origin}/auth?error=auth_failed`)
 }

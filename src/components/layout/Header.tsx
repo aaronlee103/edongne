@@ -1,9 +1,8 @@
 'use client'
 
 import Link from 'next/link'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase-client'
-import type { User } from '@/types/database'
 
 const NAV_ITEMS = [
   { href: '/board', label: '커뮤니티' },
@@ -13,19 +12,39 @@ const NAV_ITEMS = [
   { href: '/mortgage', label: '융자' },
 ]
 
-export default function Header({ user }: { user: User | null }) {
+export default function Header() {
   const [mobileOpen, setMobileOpen] = useState(false)
+  const [user, setUser] = useState<any>(null)
+  const supabase = createClient()
+
+  useEffect(() => {
+    // 현재 세션 확인
+    supabase.auth.getUser().then(({ data }) => {
+      setUser(data.user)
+    })
+
+    // 인증 상태 변화 구독
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user ?? null)
+    })
+
+    return () => subscription.unsubscribe()
+  }, [])
+
+  const handleLogout = async () => {
+    await supabase.auth.signOut()
+    setUser(null)
+    window.location.href = '/'
+  }
 
   return (
     <header className="border-b border-border sticky top-0 bg-white z-50">
       <div className="max-w-6xl mx-auto px-4">
         <div className="flex items-center justify-between h-14">
-          {/* 로고 */}
           <Link href="/" className="text-xl font-bold tracking-tight">
             이동네
           </Link>
 
-          {/* 데스크탑 네비 */}
           <nav className="hidden md:flex items-center gap-6">
             {NAV_ITEMS.map((item) => (
               <Link
@@ -38,7 +57,6 @@ export default function Header({ user }: { user: User | null }) {
             ))}
           </nav>
 
-          {/* 우측 액션 */}
           <div className="flex items-center gap-3">
             {user ? (
               <div className="flex items-center gap-2">
@@ -48,9 +66,15 @@ export default function Header({ user }: { user: User | null }) {
                 >
                   글쓰기
                 </Link>
-                <Link href="/mypage" className="text-sm text-secondary hover:text-primary">
-                  {user.nickname}
+                <Link href="/admin" className="text-sm text-secondary hover:text-primary">
+                  관리
                 </Link>
+                <button
+                  onClick={handleLogout}
+                  className="text-sm text-muted hover:text-primary"
+                >
+                  로그아웃
+                </button>
               </div>
             ) : (
               <Link
@@ -61,7 +85,6 @@ export default function Header({ user }: { user: User | null }) {
               </Link>
             )}
 
-            {/* 모바일 햄버거 */}
             <button
               className="md:hidden p-2"
               onClick={() => setMobileOpen(!mobileOpen)}
@@ -78,7 +101,6 @@ export default function Header({ user }: { user: User | null }) {
           </div>
         </div>
 
-        {/* 모바일 메뉴 */}
         {mobileOpen && (
           <nav className="md:hidden border-t border-border py-3 space-y-1">
             {NAV_ITEMS.map((item) => (

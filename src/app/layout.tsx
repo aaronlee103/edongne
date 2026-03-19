@@ -14,11 +14,10 @@ export default function RootLayout({
 }: {
   children: React.ReactNode
 }) {
-  // TODO: 서버에서 유저 세션 가져오기
   return (
     <html lang="ko">
       <body className="min-h-screen flex flex-col">
-        <Header user={null} />
+        <Header />
         <main className="flex-1">{children}</main>
         <Footer />
       </body>
