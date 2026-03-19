@@ -8,8 +8,8 @@ const NAV = [
   { href: '/admin/posts', label: '게시글', icon: '📝' },
   { href: '/admin/users', label: '회원', icon: '👥' },
   { href: '/admin/businesses', label: '업체', icon: '🏢' },
+  { href: '/admin/magazine', label: '매거진', icon: '📰' },
   { href: '/admin/reports', label: '신고', icon: '🚨' },
-  { href: '/admin/content', label: '콘텐츠', icon: '📰' },
 ]
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
