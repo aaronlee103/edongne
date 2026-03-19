@@ -1,0 +1,35 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css');
+
+:root {
+  --foreground: #000000;
+  --background: #ffffff;
+  --muted: #999999;
+  --border: #e5e5e5;
+  --bg-light: #fafafa;
+}
+
+body {
+  color: var(--foreground);
+  background: var(--background);
+  font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, sans-serif;
+}
+
+/* 레딧 스타일 투표 버튼 */
+.vote-btn {
+  @apply p-1 rounded hover:bg-gray-100 transition-colors;
+}
+.vote-btn.active-up {
+  @apply text-orange-500;
+}
+.vote-btn.active-down {
+  @apply text-blue-500;
+}
+
+/* 매거진 카드 hover */
+.magazine-card {
+  @apply transition-all duration-200 hover:shadow-md;
+}
