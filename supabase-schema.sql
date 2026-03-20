@@ -132,8 +132,9 @@ ALTER TABLE reviews ENABLE ROW LEVEL SECURITY;
 ALTER TABLE reports ENABLE ROW LEVEL SECURITY;
 ALTER TABLE bookmarks ENABLE ROW LEVEL SECURITY;
 
--- users: 누구나 조회 가능, 본인만 수정
+-- users: 누구나 조회 가능, 본인만 등록·수정
 CREATE POLICY "users_select" ON users FOR SELECT USING (true);
+CREATE POLICY "users_insert" ON users FOR INSERT WITH CHECK (auth.uid() = id);
 CREATE POLICY "users_update" ON users FOR UPDATE USING (auth.uid() = id);
 
 -- posts: 누구나 조회, 로그인 유저 작성, 본인/에디터 수정·삭제
