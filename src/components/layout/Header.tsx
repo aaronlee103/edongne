@@ -15,17 +15,30 @@ const NAV_ITEMS = [
 export default function Header() {
   const [mobileOpen, setMobileOpen] = useState(false)
   const [user, setUser] = useState<any>(null)
+  const [role, setRole] = useState<string>('user')
   const supabase = createClient()
+
+  async function fetchRole(uid: string) {
+    const { data } = await supabase
+      .from('users')
+      .select('role')
+      .eq('id', uid)
+      .single()
+    if (data?.role) setRole(data.role)
+  }
 
   useEffect(() => {
     // 현재 세션 확인
     supabase.auth.getUser().then(({ data }) => {
       setUser(data.user)
+      if (data.user) fetchRole(data.user.id)
     })
 
     // 인증 상태 변화 구독
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setUser(session?.user ?? null)
+      if (session?.user) fetchRole(session.user.id)
+      else setRole('user')
     })
 
     return () => subscription.unsubscribe()
@@ -66,9 +79,14 @@ export default function Header() {
                 >
                   글쓰기
                 </Link>
-                <Link href="/admin" className="text-sm text-secondary hover:text-primary">
-                  관리
+                <Link href="/mypage" className="text-sm text-secondary hover:text-primary">
+                  마이페이지
                 </Link>
+                {(role === 'super' || role === 'editor') && (
+                  <Link href="/admin" className="text-sm text-secondary hover:text-primary">
+                    관리
+                  </Link>
+                )}
                 <button
                   onClick={handleLogout}
                   className="text-sm text-muted hover:text-primary"
