@@ -44,7 +44,7 @@ export default function Home() {
   }
 
   async function fetchIssuePosts() {
-    let query = supabase.from('posts').select('*').eq('type', 'magazine').order('created_at', { ascending: false }).limit(8)
+    let query = supabase.from('posts').select('*').eq('type', 'magazine').order('created_at', { ascending: false }).limit(10)
     if (issueCategory !== 'all') {
       query = query.eq('category', issueCategory)
     }
@@ -210,7 +210,7 @@ export default function Home() {
           {issuePosts.length > 0 && (
             <div className="py-6 border-t border-border">
               <div className="grid md:grid-cols-4 gap-4">
-                {issuePosts.slice(0, 8).map((post) => (
+                {issuePosts.slice(0, 10).map((post) => (
                   <Link key={post.id} href={`/post/${post.id}`} className="group block">
                     <div className="rounded-lg overflow-hidden border border-border hover:shadow-md transition-all">
                       {post.thumbnail ? (
