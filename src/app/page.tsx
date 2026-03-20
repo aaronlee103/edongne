@@ -10,10 +10,10 @@ const ISSUE_CATEGORIES = [
   { key: 'editor', label: '에디터 추천' },
   { key: 'topic', label: '이번주 토픽' },
   { key: 'realestate', label: '부동산' },
-  { key: 'legal', label: '법률/비자' },
+  { key: 'legal', label: '부동산 법률' },
   { key: 'living', label: '생활정보' },
   { key: 'construction', label: '건축/인테리어' },
-  { key: 'finance', label: '융자/금융' },
+  { key: 'finance', label: '주택융자' },
 ]
 
 export default function Home() {
