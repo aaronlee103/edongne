@@ -1,7 +1,8 @@
 'use client'
 
 import Link from 'next/link'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, Suspense } from 'react'
+import { useSearchParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase-client'
 
 const ISSUE_CATEGORIES = [
@@ -16,13 +17,30 @@ const ISSUE_CATEGORIES = [
 ]
 
 export default function Home() {
+  return (
+    <Suspense fallback={<div className="max-w-6xl mx-auto px-4 py-10 text-center text-muted">로딩중...</div>}>
+      <HomeContent />
+    </Suspense>
+  )
+}
+
+function HomeContent() {
   const supabase = createClient()
+  const searchParams = useSearchParams()
   const [issueCategory, setIssueCategory] = useState('all')
   const [featuredPosts, setFeaturedPosts] = useState<any[]>([])
   const [issuePosts, setIssuePosts] = useState<any[]>([])
   const [popularPosts, setPopularPosts] = useState<any[]>([])
   const [weeklyPopular, setWeeklyPopular] = useState<any[]>([])
   const [businessCounts, setBusinessCounts] = useState({ realtor: 0, builder: 0, lawyer: 0, mortgage: 0 })
+
+  // URL 쿼리 파라미터에서 카테고리 읽기
+  useEffect(() => {
+    const cat = searchParams.get('category')
+    if (cat && ISSUE_CATEGORIES.some(c => c.key === cat)) {
+      setIssueCategory(cat)
+    }
+  }, [searchParams])
 
   useEffect(() => {
     fetchFeatured()
@@ -36,7 +54,7 @@ export default function Home() {
   async function fetchFeatured() {
     const { data } = await supabase
       .from('posts')
-      .select('*')
+      .select('*, users(nickname)')
       .eq('type', 'magazine')
       .order('created_at', { ascending: false })
       .limit(5)
@@ -44,7 +62,7 @@ export default function Home() {
   }
 
   async function fetchIssuePosts() {
-    let query = supabase.from('posts').select('*').eq('type', 'magazine').order('created_at', { ascending: false }).limit(10)
+    let query = supabase.from('posts').select('*, users(nickname)').eq('type', 'magazine').order('created_at', { ascending: false }).limit(10)
     if (issueCategory !== 'all') {
       query = query.eq('category', issueCategory)
     }
@@ -72,7 +90,7 @@ export default function Home() {
     const weekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString()
     const { data } = await supabase
       .from('posts')
-      .select('*')
+      .select('*, users(nickname)')
       .eq('type', 'magazine')
       .gte('created_at', weekAgo)
       .order('views', { ascending: false })
@@ -140,6 +158,9 @@ export default function Home() {
                       <span className="inline-block bg-white text-black text-xs font-bold px-2 py-1 rounded mb-3 w-fit">오늘의 토픽</span>
                       <h2 className="text-white text-xl md:text-2xl font-bold leading-tight mb-2">{featuredPosts[0].title}</h2>
                       <p className="text-gray-300 text-sm line-clamp-2">{featuredPosts[0].content?.substring(0, 120)}</p>
+                      {featuredPosts[0].users?.nickname && (
+                        <p className="text-gray-400 text-xs mt-2">by {featuredPosts[0].users.nickname}</p>
+                      )}
                     </div>
                   </div>
                 </Link>
@@ -165,6 +186,8 @@ export default function Home() {
                       <div className="p-3">
                         <h3 className="text-sm font-bold line-clamp-2 group-hover:text-secondary transition-colors">{post.title}</h3>
                         <div className="flex items-center gap-2 mt-2 text-xs text-muted">
+                          {post.users?.nickname && <span>{post.users.nickname}</span>}
+                          {post.users?.nickname && <span>·</span>}
                           <span>{post.category}</span>
                           <span>·</span>
                           <span>{timeAgo(post.created_at)}</span>
@@ -191,6 +214,8 @@ export default function Home() {
                     <div className="flex-1 min-w-0">
                       <h4 className="text-sm font-medium line-clamp-2 group-hover:text-secondary transition-colors">{post.title}</h4>
                       <div className="flex items-center gap-2 mt-1 text-xs text-muted">
+                        {post.users?.nickname && <span>{post.users.nickname}</span>}
+                        {post.users?.nickname && <span>·</span>}
                         <span>{post.category}</span>
                         <span>·</span>
                         <span>{timeAgo(post.created_at)}</span>
@@ -220,7 +245,11 @@ export default function Home() {
                       )}
                       <div className="p-3">
                         <h3 className="text-sm font-medium line-clamp-2 group-hover:text-secondary">{post.title}</h3>
-                        <p className="text-xs text-muted mt-1">{timeAgo(post.created_at)}</p>
+                        <div className="flex items-center gap-1 mt-1 text-xs text-muted">
+                          {post.users?.nickname && <span>{post.users.nickname}</span>}
+                          {post.users?.nickname && <span>·</span>}
+                          <span>{timeAgo(post.created_at)}</span>
+                        </div>
                       </div>
                     </div>
                   </Link>
