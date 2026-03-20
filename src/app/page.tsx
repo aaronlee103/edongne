@@ -7,14 +7,13 @@ import { createClient } from '@/lib/supabase-client'
 
 const ISSUE_CATEGORIES = [
   { key: 'all', label: '전체' },
-  { key: 'editor', label: '에디터 추천' },
-  { key: 'topic', label: '이번주 토픽' },
+  { key: 'editor', label: '에디터 픽' },
+  { key: 'neighborhood', label: '이동네어때' },
   { key: 'realestate', label: '부동산' },
   { key: 'legal', label: '부동산 법률' },
   { key: 'living', label: '생활정보' },
   { key: 'construction', label: '건축/인테리어' },
   { key: 'finance', label: '주택융자' },
-  { key: 'neighborhood', label: '이동네어때' },
 ]
 
 const ITEMS_PER_PAGE = 12
@@ -169,7 +168,7 @@ function HomeContent() {
                       <div className="w-full h-full bg-gradient-to-br from-gray-800 to-gray-900" />
                     )}
                     <div className="absolute inset-0 flex flex-col justify-end p-6">
-                      <span className="inline-block bg-white text-black text-xs font-bold px-2 py-1 rounded mb-3 w-fit">오늘의 토픽</span>
+                      <span className="inline-block bg-white text-black text-xs font-bold px-2 py-1 rounded mb-3 w-fit">에디터 픽</span>
                       <h2 className="text-white text-xl md:text-2xl font-bold leading-tight mb-2">{heroPosts[0].title}</h2>
                       <p className="text-gray-300 text-sm line-clamp-2">{heroPosts[0].content?.substring(0, 120)}</p>
                       {heroPosts[0].users?.nickname && (
