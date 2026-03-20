@@ -41,10 +41,15 @@ export async function GET(request: Request) {
 
         if (!existing) {
           // 신규 유저 → users 테이블에 등록
+          const nickname = user.user_metadata?.full_name
+            || user.user_metadata?.name
+            || user.user_metadata?.preferred_username
+            || user.email?.split('@')[0]
+            || '새회원'
           await supabase.from('users').insert({
             id: user.id,
-            email: user.email || '',
-            nickname: user.user_metadata?.full_name || user.email?.split('@')[0] || '새회원',
+            email: user.email || user.user_metadata?.email || '',
+            nickname,
             role: 'user',
             avatar_animal: 'bear',
           })
