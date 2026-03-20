@@ -14,7 +14,10 @@ const ISSUE_CATEGORIES = [
   { key: 'living', label: '생활정보' },
   { key: 'construction', label: '건축/인테리어' },
   { key: 'finance', label: '주택융자' },
+  { key: 'neighborhood', label: '이동네어때' },
 ]
+
+const ITEMS_PER_PAGE = 12
 
 export default function Home() {
   return (
@@ -28,11 +31,11 @@ function HomeContent() {
   const supabase = createClient()
   const searchParams = useSearchParams()
   const [issueCategory, setIssueCategory] = useState('all')
-  const [featuredPosts, setFeaturedPosts] = useState<any[]>([])
-  const [issuePosts, setIssuePosts] = useState<any[]>([])
+  const [allPosts, setAllPosts] = useState<any[]>([])
   const [popularPosts, setPopularPosts] = useState<any[]>([])
   const [weeklyPopular, setWeeklyPopular] = useState<any[]>([])
   const [businessCounts, setBusinessCounts] = useState({ realtor: 0, builder: 0, lawyer: 0, mortgage: 0 })
+  const [currentPage, setCurrentPage] = useState(1)
 
   // URL 쿼리 파라미터에서 카테고리 읽기
   useEffect(() => {
@@ -43,31 +46,27 @@ function HomeContent() {
   }, [searchParams])
 
   useEffect(() => {
-    fetchFeatured()
     fetchPopularPosts()
     fetchWeeklyPopular()
     fetchBusinessCounts()
   }, [])
 
-  useEffect(() => { fetchIssuePosts() }, [issueCategory])
+  useEffect(() => {
+    fetchAllPosts()
+    setCurrentPage(1)
+  }, [issueCategory])
 
-  async function fetchFeatured() {
-    const { data } = await supabase
+  async function fetchAllPosts() {
+    let query = supabase
       .from('posts')
       .select('*, users(nickname)')
       .eq('type', 'magazine')
       .order('created_at', { ascending: false })
-      .limit(5)
-    if (data) setFeaturedPosts(data)
-  }
-
-  async function fetchIssuePosts() {
-    let query = supabase.from('posts').select('*, users(nickname)').eq('type', 'magazine').order('created_at', { ascending: false }).limit(10)
     if (issueCategory !== 'all') {
       query = query.eq('category', issueCategory)
     }
     const { data } = await query
-    if (data) setIssuePosts(data)
+    if (data) setAllPosts(data)
   }
 
   async function fetchPopularPosts() {
@@ -120,6 +119,21 @@ function HomeContent() {
     return `${Math.floor(seconds / 86400)}일`
   }
 
+  // Split posts: hero(1) + featured(2) + grid(rest with pagination)
+  const heroPosts = allPosts.slice(0, 1)
+  const featuredPosts = allPosts.slice(1, 3)
+  const gridPosts = allPosts.slice(3)
+  const totalPages = Math.ceil(gridPosts.length / ITEMS_PER_PAGE)
+  const paginatedPosts = gridPosts.slice(
+    (currentPage - 1) * ITEMS_PER_PAGE,
+    currentPage * ITEMS_PER_PAGE
+  )
+
+  function handleCategoryChange(key: string) {
+    setIssueCategory(key)
+    setCurrentPage(1)
+  }
+
   return (
     <div>
       {/* ======= 이동네이슈 매거진 영역 ======= */}
@@ -130,7 +144,7 @@ function HomeContent() {
             {ISSUE_CATEGORIES.map((cat) => (
               <button
                 key={cat.key}
-                onClick={() => setIssueCategory(cat.key)}
+                onClick={() => handleCategoryChange(cat.key)}
                 className={`px-3 py-1.5 text-sm whitespace-nowrap rounded-full transition-colors ${
                   issueCategory === cat.key
                     ? 'bg-black text-white font-medium'
@@ -146,20 +160,20 @@ function HomeContent() {
           <div className="grid md:grid-cols-3 gap-6 py-6">
             {/* 왼쪽: 오늘의 토픽 (대형 카드) */}
             <div className="md:col-span-2">
-              {featuredPosts[0] ? (
-                <Link href={`/post/${featuredPosts[0].id}`} className="block group">
+              {heroPosts[0] ? (
+                <Link href={`/post/${heroPosts[0].id}`} className="block group">
                   <div className="relative rounded-xl overflow-hidden bg-gray-900 aspect-[16/9]">
-                    {featuredPosts[0].thumbnail ? (
-                      <img src={featuredPosts[0].thumbnail} alt="" className="w-full h-full object-cover opacity-70 group-hover:opacity-60 transition-opacity" />
+                    {heroPosts[0].thumbnail ? (
+                      <img src={heroPosts[0].thumbnail} alt="" className="w-full h-full object-cover opacity-70 group-hover:opacity-60 transition-opacity" />
                     ) : (
                       <div className="w-full h-full bg-gradient-to-br from-gray-800 to-gray-900" />
                     )}
                     <div className="absolute inset-0 flex flex-col justify-end p-6">
                       <span className="inline-block bg-white text-black text-xs font-bold px-2 py-1 rounded mb-3 w-fit">오늘의 토픽</span>
-                      <h2 className="text-white text-xl md:text-2xl font-bold leading-tight mb-2">{featuredPosts[0].title}</h2>
-                      <p className="text-gray-300 text-sm line-clamp-2">{featuredPosts[0].content?.substring(0, 120)}</p>
-                      {featuredPosts[0].users?.nickname && (
-                        <p className="text-gray-400 text-xs mt-2">by {featuredPosts[0].users.nickname}</p>
+                      <h2 className="text-white text-xl md:text-2xl font-bold leading-tight mb-2">{heroPosts[0].title}</h2>
+                      <p className="text-gray-300 text-sm line-clamp-2">{heroPosts[0].content?.substring(0, 120)}</p>
+                      {heroPosts[0].users?.nickname && (
+                        <p className="text-gray-400 text-xs mt-2">by {heroPosts[0].users.nickname}</p>
                       )}
                     </div>
                   </div>
@@ -174,29 +188,31 @@ function HomeContent() {
               )}
 
               {/* 아래 작은 카드 2개 */}
-              <div className="grid grid-cols-2 gap-4 mt-4">
-                {featuredPosts.slice(1, 3).map((post) => (
-                  <Link key={post.id} href={`/post/${post.id}`} className="group block">
-                    <div className="rounded-lg overflow-hidden border border-border hover:shadow-md transition-shadow">
-                      {post.thumbnail ? (
-                        <img src={post.thumbnail} alt="" className="w-full h-28 object-cover" />
-                      ) : (
-                        <div className="w-full h-28 bg-gradient-to-br from-gray-100 to-gray-200" />
-                      )}
-                      <div className="p-3">
-                        <h3 className="text-sm font-bold line-clamp-2 group-hover:text-secondary transition-colors">{post.title}</h3>
-                        <div className="flex items-center gap-2 mt-2 text-xs text-muted">
-                          {post.users?.nickname && <span>{post.users.nickname}</span>}
-                          {post.users?.nickname && <span>·</span>}
-                          <span>{post.category}</span>
-                          <span>·</span>
-                          <span>{timeAgo(post.created_at)}</span>
+              {featuredPosts.length > 0 && (
+                <div className="grid grid-cols-2 gap-4 mt-4">
+                  {featuredPosts.map((post) => (
+                    <Link key={post.id} href={`/post/${post.id}`} className="group block">
+                      <div className="rounded-lg overflow-hidden border border-border hover:shadow-md transition-shadow">
+                        {post.thumbnail ? (
+                          <img src={post.thumbnail} alt="" className="w-full h-28 object-cover" />
+                        ) : (
+                          <div className="w-full h-28 bg-gradient-to-br from-gray-100 to-gray-200" />
+                        )}
+                        <div className="p-3">
+                          <h3 className="text-sm font-bold line-clamp-2 group-hover:text-secondary transition-colors">{post.title}</h3>
+                          <div className="flex items-center gap-2 mt-2 text-xs text-muted">
+                            {post.users?.nickname && <span>{post.users.nickname}</span>}
+                            {post.users?.nickname && <span>·</span>}
+                            <span>{post.category}</span>
+                            <span>·</span>
+                            <span>{timeAgo(post.created_at)}</span>
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  </Link>
-                ))}
-              </div>
+                    </Link>
+                  ))}
+                </div>
+              )}
             </div>
 
             {/* 오른쪽: 이번주 인기 */}
@@ -206,7 +222,7 @@ function HomeContent() {
                 <span className="text-xs bg-gray-100 px-1.5 py-0.5 rounded">📊</span>
               </div>
               <div className="space-y-4">
-                {(weeklyPopular.length > 0 ? weeklyPopular : featuredPosts.slice(0, 4)).map((post, i) => (
+                {(weeklyPopular.length > 0 ? weeklyPopular : allPosts.slice(0, 4)).map((post, i) => (
                   <Link key={post.id} href={`/post/${post.id}`} className="flex gap-3 group">
                     <div className="flex items-start">
                       <span className={`text-lg font-bold w-6 ${i === 0 ? 'text-primary' : 'text-muted'}`}>{i + 1}</span>
@@ -231,11 +247,11 @@ function HomeContent() {
             </div>
           </div>
 
-          {/* 이슈 카드 리스트 */}
-          {issuePosts.length > 0 && (
+          {/* 이슈 카드 리스트 (12개씩 페이지네이션) */}
+          {paginatedPosts.length > 0 && (
             <div className="py-6 border-t border-border">
               <div className="grid md:grid-cols-4 gap-4">
-                {issuePosts.slice(0, 10).map((post) => (
+                {paginatedPosts.map((post) => (
                   <Link key={post.id} href={`/post/${post.id}`} className="group block">
                     <div className="rounded-lg overflow-hidden border border-border hover:shadow-md transition-all">
                       {post.thumbnail ? (
@@ -255,6 +271,39 @@ function HomeContent() {
                   </Link>
                 ))}
               </div>
+
+              {/* 페이지네이션 */}
+              {totalPages > 1 && (
+                <div className="flex items-center justify-center gap-1 mt-6">
+                  <button
+                    onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                    disabled={currentPage === 1}
+                    className="w-8 h-8 flex items-center justify-center rounded text-sm border border-border hover:bg-gray-50 disabled:opacity-30 disabled:cursor-not-allowed"
+                  >
+                    ←
+                  </button>
+                  {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
+                    <button
+                      key={page}
+                      onClick={() => setCurrentPage(page)}
+                      className={`w-8 h-8 flex items-center justify-center rounded text-sm transition-colors ${
+                        currentPage === page
+                          ? 'bg-black text-white font-medium'
+                          : 'border border-border hover:bg-gray-50'
+                      }`}
+                    >
+                      {page}
+                    </button>
+                  ))}
+                  <button
+                    onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                    disabled={currentPage === totalPages}
+                    className="w-8 h-8 flex items-center justify-center rounded text-sm border border-border hover:bg-gray-50 disabled:opacity-30 disabled:cursor-not-allowed"
+                  >
+                    →
+                  </button>
+                </div>
+              )}
             </div>
           )}
         </div>

@@ -10,6 +10,7 @@ const NAV_ITEMS = [
   { href: '/?category=construction', label: '건축/인테리어' },
   { href: '/?category=legal', label: '변호사' },
   { href: '/?category=finance', label: '융자' },
+  { href: '/?category=neighborhood', label: '이동네어때' },
 ]
 
 export default function Header() {
