@@ -30,6 +30,27 @@ export async function GET(request: Request) {
 
     const { error } = await supabase.auth.exchangeCodeForSession(code)
     if (!error) {
+      // 로그인 성공 후 users 테이블에 프로필 자동 생성
+      const { data: { user } } = await supabase.auth.getUser()
+      if (user) {
+        const { data: existing } = await supabase
+          .from('users')
+          .select('id')
+          .eq('id', user.id)
+          .single()
+
+        if (!existing) {
+          // 신규 유저 → users 테이블에 등록
+          await supabase.from('users').insert({
+            id: user.id,
+            email: user.email || '',
+            nickname: user.user_metadata?.full_name || user.email?.split('@')[0] || '새회원',
+            role: 'user',
+            avatar_animal: 'bear',
+          })
+        }
+      }
+
       return NextResponse.redirect(`${origin}${next}`)
     }
     console.error('Auth callback error:', error.message)
