@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { useState, useEffect } from 'react'
-import { useParams } from 'next/navigation'
+import { useParams, useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase-client'
 
 const CATEGORIES: Record<string, string> = {
@@ -12,19 +12,39 @@ const CATEGORIES: Record<string, string> = {
 
 export default function PostDetailPage() {
   const params = useParams()
+  const router = useRouter()
   const postId = params.id as string
   const supabase = createClient()
   const [post, setPost] = useState<any>(null)
   const [comments, setComments] = useState<any[]>([])
   const [commentText, setCommentText] = useState('')
   const [user, setUser] = useState<any>(null)
+  const [role, setRole] = useState<string>('user')
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    supabase.auth.getUser().then(({ data }) => setUser(data.user))
+    supabase.auth.getUser().then(({ data }) => {
+      setUser(data.user)
+      if (data.user) {
+        supabase.from('users').select('role').eq('id', data.user.id).single()
+          .then(({ data: u }) => { if (u?.role) setRole(u.role) })
+      }
+    })
     fetchPost()
     fetchComments()
   }, [postId])
+
+  const canEdit = user && post && (user.id === post.user_id || role === 'super' || role === 'editor')
+
+  async function handleDelete() {
+    if (!confirm('이 게시글을 삭제하시겠습니까?')) return
+    const { error } = await supabase.from('posts').delete().eq('id', postId)
+    if (error) {
+      alert('삭제 실패: ' + error.message)
+    } else {
+      router.push('/board')
+    }
+  }
 
   async function fetchPost() {
     const { data } = await supabase
@@ -95,9 +115,27 @@ export default function PostDetailPage() {
           <span className="text-xs px-2 py-0.5 bg-gray-100 rounded">{CATEGORIES[post.category] || post.category}</span>
         </div>
         <h1 className="text-2xl font-bold mb-4">{post.title}</h1>
-        <div className="flex items-center gap-3 text-sm text-muted mb-6">
-          <span>{new Date(post.created_at).toLocaleDateString('ko-KR')}</span>
-          <span>조회 {post.views || 0}</span>
+        <div className="flex items-center justify-between mb-6">
+          <div className="flex items-center gap-3 text-sm text-muted">
+            <span>{new Date(post.created_at).toLocaleDateString('ko-KR')}</span>
+            <span>조회 {post.views || 0}</span>
+          </div>
+          {canEdit && (
+            <div className="flex items-center gap-2">
+              <Link
+                href={`/post/${postId}/edit`}
+                className="text-xs px-3 py-1 border border-border rounded hover:bg-gray-50 transition-colors"
+              >
+                수정
+              </Link>
+              <button
+                onClick={handleDelete}
+                className="text-xs px-3 py-1 border border-red-200 text-red-500 rounded hover:bg-red-50 transition-colors"
+              >
+                삭제
+              </button>
+            </div>
+          )}
         </div>
         <div className="prose prose-sm max-w-none whitespace-pre-wrap text-sm leading-relaxed">
           {post.content}

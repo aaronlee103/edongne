@@ -68,7 +68,7 @@ export default function AdminPostsPage() {
               <th className="text-left px-4 py-2 font-medium text-muted w-16">조회</th>
               <th className="text-left px-4 py-2 font-medium text-muted w-16">댓글</th>
               <th className="text-left px-4 py-2 font-medium text-muted w-24">날짜</th>
-              <th className="text-left px-4 py-2 font-medium text-muted w-16">관리</th>
+              <th className="text-left px-4 py-2 font-medium text-muted w-24">관리</th>
             </tr>
           </thead>
           <tbody>
@@ -87,7 +87,10 @@ export default function AdminPostsPage() {
                 <td className="px-4 py-2.5 text-muted">{post.comment_count}</td>
                 <td className="px-4 py-2.5 text-xs text-muted">{new Date(post.created_at).toLocaleDateString('ko-KR')}</td>
                 <td className="px-4 py-2.5">
-                  <button onClick={() => deletePost(post.id)} className="text-xs text-red-500 hover:underline">삭제</button>
+                  <div className="flex items-center gap-2">
+                    <Link href={`/post/${post.id}/edit`} className="text-xs text-blue-500 hover:underline">수정</Link>
+                    <button onClick={() => deletePost(post.id)} className="text-xs text-red-500 hover:underline">삭제</button>
+                  </div>
                 </td>
               </tr>
             ))}
