@@ -10,6 +10,26 @@ const CATEGORIES: Record<string, string> = {
   jobs: '구인구직', housing: '렌트/룸메', topic: '토픽', editor: '에디터',
 }
 
+function renderMarkdown(text: string): string {
+  let html = text
+    // 이미지: ![alt](url)
+    .replace(/!\[([^\]]*)\]\(([^)]+)\)/g, '<img src="$2" alt="$1" class="rounded-lg my-4 max-w-full" />')
+    // 링크: [text](url)
+    .replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" class="text-blue-600 underline" target="_blank" rel="noopener noreferrer">$1</a>')
+    // h3: ### text
+    .replace(/^### (.+)$/gm, '<h3 class="text-lg font-bold mt-6 mb-2">$1</h3>')
+    // h2: ## text
+    .replace(/^## (.+)$/gm, '<h2 class="text-xl font-bold mt-8 mb-3">$1</h2>')
+    // 굵게: **text**
+    .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+    // 기울임: *text*
+    .replace(/\*(.+?)\*/g, '<em>$1</em>')
+    // 줄바꿈
+    .replace(/\n\n/g, '</p><p class="mb-4">')
+    .replace(/\n/g, '<br />')
+  return '<p class="mb-4">' + html + '</p>'
+}
+
 export default function PostDetailPage() {
   const params = useParams()
   const router = useRouter()
@@ -137,9 +157,16 @@ export default function PostDetailPage() {
             </div>
           )}
         </div>
-        <div className="prose prose-sm max-w-none whitespace-pre-wrap text-sm leading-relaxed">
-          {post.content}
-        </div>
+        {post.type === 'magazine' || post.type === 'notice' ? (
+          <div
+            className="prose prose-sm max-w-none text-sm leading-relaxed"
+            dangerouslySetInnerHTML={{ __html: renderMarkdown(post.content) }}
+          />
+        ) : (
+          <div className="prose prose-sm max-w-none whitespace-pre-wrap text-sm leading-relaxed">
+            {post.content}
+          </div>
+        )}
 
         <div className="flex items-center gap-4 mt-6 pt-6 border-t border-border">
           <span className="font-bold">▲ {post.vote_score}</span>
