@@ -15,7 +15,7 @@ export default function RealtorsPage() {
 
   async function fetchRealtors() {
     setLoading(true)
-    let query = supabase.from('businesses').select('*').eq('type', 'realtor').order('kor_name')
+    let query = supabase.from('businesses').select('*').eq('type', 'realtor').or('status.is.null,status.eq.active').order('kor_name')
     if (region !== '전체') query = query.eq('region', region)
     const { data } = await query
     if (data) setRealtors(data)
@@ -43,17 +43,23 @@ export default function RealtorsPage() {
       ) : (
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
           {filtered.map((r) => (
-            <Link key={r.id} href={`/business/${r.id}`} className="block p-4 border border-border rounded-lg hover:shadow-md transition-all">
-              <div className="flex items-start justify-between mb-2">
-                <div>
-                  <h3 className="font-semibold text-sm">{r.kor_name}</h3>
-                  <p className="text-xs text-muted">{r.eng_name}</p>
+            <Link key={r.id} href={`/business/${r.id}`} className="block border border-border rounded-lg hover:shadow-md transition-all overflow-hidden">
+              {r.hero_image && (
+                <img src={r.hero_image} alt={r.kor_name} className="w-full h-32 object-cover" />
+              )}
+              <div className="p-4">
+                <div className="flex items-start justify-between mb-2">
+                  <div>
+                    <h3 className="font-semibold text-sm">{r.kor_name}</h3>
+                    <p className="text-xs text-muted">{r.eng_name}</p>
+                  </div>
+                  {r.plan !== 'basic' && <span className={`text-xs px-1.5 py-0.5 rounded ${r.plan === 'premium' ? 'bg-black text-white' : 'bg-gray-200'}`}>{r.plan?.toUpperCase()}</span>}
                 </div>
-                {r.plan !== 'basic' && <span className={`text-xs px-1.5 py-0.5 rounded ${r.plan === 'premium' ? 'bg-black text-white' : 'bg-gray-200'}`}>{r.plan?.toUpperCase()}</span>}
-              </div>
-              <div className="space-y-1 text-xs text-secondary">
-                {r.region && r.area && <p>📍 {r.region} · {r.area}</p>}
-                {r.phone1 && <p>📞 {r.phone1}</p>}
+                {r.tagline && <p className="text-xs text-primary mb-2 line-clamp-1">{r.tagline}</p>}
+                <div className="space-y-1 text-xs text-secondary">
+                  {r.region && r.area && <p>📍 {r.region} · {r.area}</p>}
+                  {r.phone1 && <p>📞 {r.phone1}</p>}
+                </div>
               </div>
             </Link>
           ))}

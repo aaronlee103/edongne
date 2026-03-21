@@ -15,7 +15,7 @@ export default function BuildersPage() {
 
   async function fetchItems() {
     setLoading(true)
-    let query = supabase.from('businesses').select('*').eq('type', 'builder').order('kor_name')
+    let query = supabase.from('businesses').select('*').eq('type', 'builder').or('status.is.null,status.eq.active').order('kor_name')
     if (region !== '전체') query = query.eq('region', region)
     const { data } = await query
     if (data) setItems(data)
@@ -43,18 +43,22 @@ export default function BuildersPage() {
       ) : (
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
           {filtered.map((b) => (
-            <Link key={b.id} href={`/business/${b.id}`} className="block p-4 border border-border rounded-lg hover:shadow-md transition-all">
-              <div className="flex items-start justify-between mb-2">
-                <div>
-                  <h3 className="font-semibold text-sm">{b.kor_name}</h3>
-                  <p className="text-xs text-muted">{b.eng_name}</p>
+            <Link key={b.id} href={`/business/${b.id}`} className="block border border-border rounded-lg hover:shadow-md transition-all overflow-hidden">
+              {b.hero_image && <img src={b.hero_image} alt={b.kor_name} className="w-full h-32 object-cover" />}
+              <div className="p-4">
+                <div className="flex items-start justify-between mb-2">
+                  <div>
+                    <h3 className="font-semibold text-sm">{b.kor_name}</h3>
+                    <p className="text-xs text-muted">{b.eng_name}</p>
+                  </div>
+                  {b.plan !== 'basic' && <span className={`text-xs px-1.5 py-0.5 rounded ${b.plan === 'premium' ? 'bg-black text-white' : 'bg-gray-200'}`}>{b.plan?.toUpperCase()}</span>}
                 </div>
-                {b.plan !== 'basic' && <span className={`text-xs px-1.5 py-0.5 rounded ${b.plan === 'premium' ? 'bg-black text-white' : 'bg-gray-200'}`}>{b.plan?.toUpperCase()}</span>}
-              </div>
-              <div className="space-y-1 text-xs text-secondary">
-                {b.region && b.area && <p>📍 {b.region} · {b.area}</p>}
-                {b.phone1 && <p>📞 {b.phone1}</p>}
-                {b.specialty && <p>🔨 {b.specialty}</p>}
+                {b.tagline && <p className="text-xs text-primary mb-2 line-clamp-1">{b.tagline}</p>}
+                <div className="space-y-1 text-xs text-secondary">
+                  {b.region && b.area && <p>📍 {b.region} · {b.area}</p>}
+                  {b.phone1 && <p>📞 {b.phone1}</p>}
+                  {b.specialty && <p>🔨 {b.specialty}</p>}
+                </div>
               </div>
             </Link>
           ))}
