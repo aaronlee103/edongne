@@ -11,6 +11,9 @@ export default function Footer() {
               뉴욕·뉴저지 한인 커뮤니티<br />
               부동산 · 건축 · 법률 · 융자
             </p>
+            <p className="text-muted mt-2 text-xs">
+              <a href="mailto:info@edongne.com" className="hover:text-primary">info@edongne.com</a>
+            </p>
           </div>
           <div>
             <h4 className="font-semibold mb-3">커뮤니티</h4>
@@ -33,8 +36,10 @@ export default function Footer() {
           <div>
             <h4 className="font-semibold mb-3">서비스</h4>
             <ul className="space-y-1.5 text-muted">
-              <li><Link href="/pricing" className="hover:text-primary">요금 안내</Link></li>
               <li><Link href="/business-register" className="hover:text-primary">업체 등록</Link></li>
+              <li><Link href="/contact" className="hover:text-primary">문의하기</Link></li>
+              <li><Link href="/about" className="hover:text-primary">이동네 소개</Link></li>
+              <li><Link href="/privacy" className="hover:text-primary">개인정보처리방침</Link></li>
             </ul>
           </div>
         </div>
