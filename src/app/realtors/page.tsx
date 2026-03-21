@@ -43,11 +43,8 @@ export default function RealtorsPage() {
       ) : (
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
           {filtered.map((r) => (
-            <Link key={r.id} href={`/business/${r.id}`} className="block border border-border rounded-lg hover:shadow-md transition-all overflow-hidden">
-              {r.hero_image && (
-                <img src={r.hero_image} alt={r.kor_name} className="w-full h-32 object-cover" />
-              )}
-              <div className="p-4">
+            <Link key={r.id} href={`/business/${r.id}`} className="flex border border-border rounded-lg hover:shadow-md transition-all overflow-hidden">
+              <div className="flex-1 p-4">
                 <div className="flex items-start justify-between mb-2">
                   <div>
                     <h3 className="font-semibold text-sm">{r.kor_name}</h3>
@@ -61,6 +58,11 @@ export default function RealtorsPage() {
                   {r.phone1 && <p>📞 {r.phone1}</p>}
                 </div>
               </div>
+              {r.hero_image && (
+                <div className="w-24 h-24 m-3 flex-shrink-0">
+                  <img src={r.hero_image} alt={r.kor_name} className="w-full h-full object-cover rounded-lg" />
+                </div>
+              )}
             </Link>
           ))}
         </div>

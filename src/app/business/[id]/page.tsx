@@ -116,18 +116,16 @@ export default function BusinessDetailPage({ params }: { params: { id: string } 
         ← 목록으로 돌아가기
       </Link>
 
-      {/* 대표 이미지 */}
-      {business.hero_image && (
-        <div className="relative w-full h-48 md:h-64 rounded-xl overflow-hidden mb-6">
-          <img src={business.hero_image} alt={business.kor_name} className="w-full h-full object-cover" />
-          <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent" />
-        </div>
-      )}
-
       {/* 업체 정보 */}
       <div className="border border-border rounded-xl p-6 mb-8">
-        <div className="flex items-start justify-between mb-4">
-          <div>
+        <div className="flex items-start gap-5 mb-4">
+          {/* 대표 이미지 - 정사각형 */}
+          {business.hero_image && (
+            <div className="w-28 h-28 md:w-36 md:h-36 flex-shrink-0 rounded-xl overflow-hidden">
+              <img src={business.hero_image} alt={business.kor_name} className="w-full h-full object-cover" />
+            </div>
+          )}
+          <div className="flex-1">
             <div className="flex items-center gap-2 mb-1">
               <span className="text-xs px-2 py-0.5 bg-gray-100 rounded">{TYPE_LABEL[business.type] || business.type}</span>
               {business.plan !== 'basic' && (
