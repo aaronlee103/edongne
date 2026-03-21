@@ -2,6 +2,7 @@
 
 import Link from 'next/link'
 import { useState, useEffect } from 'react'
+import { useSearchParams, usePathname, useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase-client'
 
 const NAV_ITEMS = [
@@ -13,11 +14,28 @@ const NAV_ITEMS = [
   { href: '/?category=neighborhood', label: '이동네어때' },
 ]
 
+const ISSUE_CATEGORIES = [
+  { key: 'all', label: '전체' },
+  { key: 'editor', label: '에디터 픽' },
+  { key: 'neighborhood', label: '이동네어때' },
+  { key: 'realestate', label: '부동산' },
+  { key: 'legal', label: '부동산 법률' },
+  { key: 'living', label: '생활정보' },
+  { key: 'construction', label: '건축/인테리어' },
+  { key: 'finance', label: '주택융자' },
+]
+
 export default function Header() {
   const [mobileOpen, setMobileOpen] = useState(false)
   const [user, setUser] = useState<any>(null)
   const [role, setRole] = useState<string>('user')
+  const [searchOpen, setSearchOpen] = useState(false)
+  const [searchQuery, setSearchQuery] = useState('')
   const supabase = createClient()
+  const searchParams = useSearchParams()
+  const pathname = usePathname()
+  const router = useRouter()
+  const currentCategory = searchParams.get('category') || 'all'
 
   async function fetchRole(uid: string) {
     const { data } = await supabase
@@ -49,6 +67,15 @@ export default function Header() {
     await supabase.auth.signOut()
     setUser(null)
     window.location.href = '/'
+  }
+
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault()
+    if (searchQuery.trim()) {
+      router.push(`/?search=${encodeURIComponent(searchQuery.trim())}`)
+      setSearchOpen(false)
+      setSearchQuery('')
+    }
   }
 
   return (
@@ -134,6 +161,65 @@ export default function Header() {
             ))}
           </nav>
         )}
+      </div>
+
+      {/* 카테고리 탭 + 검색 (2번째 줄) */}
+      <div className="border-t border-border bg-white">
+        <div className="max-w-6xl mx-auto px-4">
+          <div className="flex items-center gap-1 py-2">
+            <div className="flex items-center gap-1 overflow-x-auto flex-1">
+              {ISSUE_CATEGORIES.map((cat) => (
+                <Link
+                  key={cat.key}
+                  href={cat.key === 'all' ? '/' : `/?category=${cat.key}`}
+                  className={`px-3 py-1.5 text-sm whitespace-nowrap rounded-full transition-colors ${
+                    (pathname === '/' && currentCategory === cat.key) || (pathname === '/' && cat.key === 'all' && !searchParams.get('category'))
+                      ? 'bg-black text-white font-medium'
+                      : 'text-secondary hover:text-primary hover:bg-gray-100'
+                  }`}
+                >
+                  {cat.label}
+                </Link>
+              ))}
+            </div>
+
+            {/* 검색 버튼 */}
+            <div className="flex items-center ml-2 shrink-0">
+              {searchOpen ? (
+                <form onSubmit={handleSearch} className="flex items-center gap-1">
+                  <input
+                    type="text"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    placeholder="검색어 입력..."
+                    className="w-40 px-3 py-1.5 text-sm border border-border rounded-full focus:outline-none focus:ring-1 focus:ring-black"
+                    autoFocus
+                  />
+                  <button type="submit" className="p-1.5 hover:bg-gray-100 rounded-full">
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                    </svg>
+                  </button>
+                  <button type="button" onClick={() => { setSearchOpen(false); setSearchQuery('') }} className="p-1.5 hover:bg-gray-100 rounded-full">
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </button>
+                </form>
+              ) : (
+                <button
+                  onClick={() => setSearchOpen(true)}
+                  className="flex items-center gap-1 px-3 py-1.5 text-sm text-secondary hover:text-primary hover:bg-gray-100 rounded-full transition-colors"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                  </svg>
+                  <span className="hidden sm:inline">검색</span>
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
       </div>
     </header>
   )

@@ -138,23 +138,6 @@ function HomeContent() {
       {/* ======= 이동네이슈 매거진 영역 ======= */}
       <section className="border-b border-border">
         <div className="max-w-6xl mx-auto px-4">
-          {/* 카테고리 메뉴 */}
-          <div className="flex items-center gap-1 overflow-x-auto py-3 border-b border-border">
-            {ISSUE_CATEGORIES.map((cat) => (
-              <button
-                key={cat.key}
-                onClick={() => handleCategoryChange(cat.key)}
-                className={`px-3 py-1.5 text-sm whitespace-nowrap rounded-full transition-colors ${
-                  issueCategory === cat.key
-                    ? 'bg-black text-white font-medium'
-                    : 'text-secondary hover:text-primary hover:bg-gray-100'
-                }`}
-              >
-                {cat.label}
-              </button>
-            ))}
-          </div>
-
           {/* 메인 레이아웃: 피처드 + 인기 */}
           <div className="grid md:grid-cols-3 gap-6 py-6">
             {/* 왼쪽: 오늘의 토픽 (대형 카드) */}
