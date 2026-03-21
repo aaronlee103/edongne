@@ -34,7 +34,7 @@ export default function Footer() {
             <h4 className="font-semibold mb-3">서비스</h4>
             <ul className="space-y-1.5 text-muted">
               <li><Link href="/pricing" className="hover:text-primary">요금 안내</Link></li>
-              <li><Link href="/auth" className="hover:text-primary">업체 등록</Link></li>
+              <li><Link href="/business-register" className="hover:text-primary">업체 등록</Link></li>
             </ul>
           </div>
         </div>
