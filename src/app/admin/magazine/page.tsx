@@ -15,17 +15,20 @@ export default function AdminMagazinePage() {
   const [posts, setPosts] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [showEditor, setShowEditor] = useState(false)
+  const [filterCat, setFilterCat] = useState('all')
 
-  useEffect(() => { fetchPosts() }, [])
+  useEffect(() => { fetchPosts() }, [filterCat])
 
   async function fetchPosts() {
     setLoading(true)
-    const { data } = await supabase
+    let query = supabase
       .from('posts')
       .select('*')
       .in('type', ['magazine', 'notice'])
       .order('created_at', { ascending: false })
-      .limit(30)
+      .limit(50)
+    if (filterCat !== 'all') query = query.eq('category', filterCat)
+    const { data } = await query
     if (data) setPosts(data)
     setLoading(false)
   }
@@ -53,6 +56,18 @@ export default function AdminMagazinePage() {
         >
           {showEditor ? '목록 보기' : '+ 새 매거진 글'}
         </button>
+      </div>
+
+      <div className="flex gap-2 mb-4 flex-wrap">
+        {['all', ...MAGAZINE_CATEGORIES].map(cat => (
+          <button
+            key={cat}
+            onClick={() => setFilterCat(cat)}
+            className={`px-3 py-1 text-xs rounded-full ${filterCat === cat ? 'bg-black text-white' : 'bg-gray-100 text-secondary hover:bg-gray-200'}`}
+          >
+            {cat === 'all' ? '전체' : cat}
+          </button>
+        ))}
       </div>
 
       {showEditor ? (
