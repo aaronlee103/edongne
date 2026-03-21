@@ -105,7 +105,7 @@ function HomeContent() {
       .eq('type', 'magazine')
       .gte('created_at', weekAgo)
       .order('views', { ascending: false })
-      .limit(4)
+      .limit(5)
     if (data) setWeeklyPopular(data)
   }
 
@@ -229,7 +229,7 @@ function HomeContent() {
                 <span className="text-xs bg-gray-100 px-1.5 py-0.5 rounded">📊</span>
               </div>
               <div className="space-y-4">
-                {(weeklyPopular.length > 0 ? weeklyPopular : allPosts.slice(0, 4)).map((post, i) => (
+                {(weeklyPopular.length > 0 ? weeklyPopular : allPosts.slice(0, 5)).map((post, i) => (
                   <Link key={post.id} href={`/post/${post.id}`} className="flex gap-3 group">
                     <div className="flex items-start">
                       <span className={`text-lg font-bold w-6 ${i === 0 ? 'text-primary' : 'text-muted'}`}>{i + 1}</span>
@@ -251,6 +251,29 @@ function HomeContent() {
                   </Link>
                 ))}
               </div>
+
+              {/* 배너 광고: Sculpture Book Inc. */}
+              <a
+                href="https://www.sculpturebook.com"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="block mt-6 rounded-lg overflow-hidden hover:opacity-95 transition-opacity"
+                style={{ backgroundColor: '#8A7D6B' }}
+              >
+                <div className="px-5 py-6">
+                  <p className="text-xs tracking-widest mb-3" style={{ color: '#D4CFC7' }}>
+                    SCULPTURE BOOK INC.
+                  </p>
+                  <p className="text-xl font-serif leading-snug" style={{ color: '#EDE8E0' }}>
+                    A Premier Custom<br />
+                    Metal Fabrication<br />
+                    Studio in Brooklyn, NYC
+                  </p>
+                  <p className="text-xs mt-3" style={{ color: '#B8B0A4' }}>
+                    핸디맨 · 인테리어 · 메탈 제작
+                  </p>
+                </div>
+              </a>
             </div>
           </div>
 
