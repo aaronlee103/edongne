@@ -253,10 +253,8 @@ function HomeContent() {
               </div>
 
               {/* 배너 광고: Sculpture Book Inc. */}
-              <a
-                href="https://www.sculpturebook.com"
-                target="_blank"
-                rel="noopener noreferrer"
+              <Link
+                href="/business/0d1ad303-7d15-42fc-b6df-f745079497d2"
                 className="block mt-6 rounded-lg overflow-hidden hover:opacity-95 transition-opacity"
                 style={{ backgroundColor: '#8A7D6B' }}
               >
@@ -273,7 +271,7 @@ function HomeContent() {
                     핸디맨 · 인테리어 · 메탈 제작
                   </p>
                 </div>
-              </a>
+              </Link>
             </div>
           </div>
 
@@ -380,7 +378,7 @@ function HomeContent() {
             <div className="mt-8 p-4 bg-bg-light rounded-lg border border-border">
               <h3 className="font-semibold text-sm mb-2">업체 등록 안내</h3>
               <p className="text-xs text-muted mb-3">이동네에 업체를 등록하고 더 많은 고객을 만나보세요.</p>
-              <Link href="/pricing" className="text-xs font-medium text-primary hover:underline">요금 안내 보기 →</Link>
+              <Link href="/business-register" className="text-xs font-medium text-primary hover:underline">업체 등록하기 →</Link>
             </div>
           </aside>
         </div>
