@@ -6,7 +6,7 @@ import { createClient } from '@/lib/supabase-client'
 import { uploadImage } from '@/lib/upload'
 
 const MAGAZINE_CATEGORIES = [
-  '이번주 토픽', '에디터 추천', '부동산 가이드', '생활 정보',
+  '에디터 추천', '부동산 가이드', '생활 정보',
   '법률/비자', '건축/인테리어', '맛집/문화', '뉴스',
 ]
 
