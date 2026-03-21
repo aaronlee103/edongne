@@ -7,11 +7,10 @@ import { createClient } from '@/lib/supabase-client'
 
 const NAV_ITEMS = [
   { href: '/board', label: '커뮤니티' },
-  { href: '/?category=realestate', label: '부동산' },
-  { href: '/?category=construction', label: '건축/인테리어' },
-  { href: '/?category=legal', label: '변호사' },
-  { href: '/?category=finance', label: '융자' },
-  { href: '/?category=neighborhood', label: '이동네어때' },
+  { href: '/realtors', label: '부동산' },
+  { href: '/builders', label: '건축/인테리어' },
+  { href: '/lawyers', label: '변호사' },
+  { href: '/mortgage', label: '융자' },
 ]
 
 const ISSUE_CATEGORIES = [
