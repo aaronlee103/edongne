@@ -35,12 +35,22 @@ function HomeContent() {
   const [weeklyPopular, setWeeklyPopular] = useState<any[]>([])
   const [businessCounts, setBusinessCounts] = useState({ realtor: 0, builder: 0, lawyer: 0, mortgage: 0 })
   const [currentPage, setCurrentPage] = useState(1)
+  const [searchTerm, setSearchTerm] = useState('')
 
-  // URL 쿼리 파라미터에서 카테고리 읽기
+  // URL 쿼리 파라미터에서 카테고리 및 검색어 읽기
   useEffect(() => {
     const cat = searchParams.get('category')
+    const search = searchParams.get('search')
     if (cat && ISSUE_CATEGORIES.some(c => c.key === cat)) {
       setIssueCategory(cat)
+      setSearchTerm('')
+    }
+    if (search) {
+      setSearchTerm(search)
+      setIssueCategory('all')
+    }
+    if (!cat && !search) {
+      setSearchTerm('')
     }
   }, [searchParams])
 
@@ -53,7 +63,7 @@ function HomeContent() {
   useEffect(() => {
     fetchAllPosts()
     setCurrentPage(1)
-  }, [issueCategory])
+  }, [issueCategory, searchTerm])
 
   async function fetchAllPosts() {
     let query = supabase
@@ -61,7 +71,10 @@ function HomeContent() {
       .select('*, users(nickname)')
       .eq('type', 'magazine')
       .order('created_at', { ascending: false })
-    if (issueCategory !== 'all') {
+    if (searchTerm) {
+      // 제목 또는 내용에서 검색어 포함 여부 확인
+      query = query.or(`title.ilike.%${searchTerm}%,content.ilike.%${searchTerm}%`)
+    } else if (issueCategory !== 'all') {
       query = query.eq('category', issueCategory)
     }
     const { data } = await query
@@ -135,6 +148,18 @@ function HomeContent() {
 
   return (
     <div>
+      {/* ======= 검색 결과 헤더 ======= */}
+      {searchTerm && (
+        <div className="max-w-6xl mx-auto px-4 py-4 border-b border-border">
+          <div className="flex items-center justify-between">
+            <p className="text-sm text-secondary">
+              <span className="font-medium text-primary">"{searchTerm}"</span> 검색 결과 ({allPosts.length}건)
+            </p>
+            <Link href="/" className="text-xs text-muted hover:text-primary">검색 초기화 ✕</Link>
+          </div>
+        </div>
+      )}
+
       {/* ======= 이동네이슈 매거진 영역 ======= */}
       <section className="border-b border-border">
         <div className="max-w-6xl mx-auto px-4">
