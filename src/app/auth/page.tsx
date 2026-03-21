@@ -4,7 +4,7 @@ import { useState } from 'react'
 import { createClient } from '@/lib/supabase-client'
 
 export default function AuthPage() {
-  const [loading, setLoading] = useState<'google' | 'kakao' | null>(null)
+  const [loading, setLoading] = useState<'google' | 'facebook' | null>(null)
 
   const handleGoogleLogin = async () => {
     setLoading('google')
@@ -21,14 +21,14 @@ export default function AuthPage() {
     }
   }
 
-  const handleKakaoLogin = async () => {
-    setLoading('kakao')
+  const handleFacebookLogin = async () => {
+    setLoading('facebook')
     const supabase = createClient()
     const { error } = await supabase.auth.signInWithOAuth({
-      provider: 'kakao',
+      provider: 'facebook',
       options: {
         redirectTo: `${window.location.origin}/auth/callback`,
-        scopes: 'profile_nickname profile_image',
+        scopes: 'email',
       },
     })
     if (error) {
@@ -54,12 +54,12 @@ export default function AuthPage() {
           {loading === 'google' ? '로그인 중...' : 'Google로 계속하기'}
         </button>
         <button
-          onClick={handleKakaoLogin}
+          onClick={handleFacebookLogin}
           disabled={loading !== null}
-          className="w-full flex items-center justify-center gap-3 py-3 bg-[#FEE500] rounded-lg hover:bg-[#FDD800] transition-colors text-sm font-medium text-[#000000cc] disabled:opacity-50"
+          className="w-full flex items-center justify-center gap-3 py-3 bg-[#1877F2] rounded-lg hover:bg-[#166FE5] transition-colors text-sm font-medium text-white disabled:opacity-50"
         >
-          <svg className="w-5 h-5" viewBox="0 0 24 24"><path d="M12 3C6.48 3 2 6.36 2 10.44c0 2.62 1.75 4.93 4.38 6.24l-1.12 4.12c-.1.36.31.65.62.44l4.84-3.2c.42.04.85.06 1.28.06 5.52 0 10-3.36 10-7.66C22 6.36 17.52 3 12 3z" fill="#3C1E1E"/></svg>
-          {loading === 'kakao' ? '로그인 중...' : '카카오로 계속하기'}
+          <svg className="w-5 h-5" viewBox="0 0 24 24" fill="white"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>
+          {loading === 'facebook' ? '로그인 중...' : 'Facebook으로 계속하기'}
         </button>
         <p className="text-xs text-muted text-center mt-4">
           가입 시 이용약관 및 개인정보처리방침에 동의하게 됩니다.
