@@ -34,12 +34,13 @@ export default function AdminBusinessesPage() {
     else fetchBusinesses()
   }
 
-  async function quickUpdate(id: string, field: string, value: string) {
-    const { error } = await supabase.from('businesses').update({ [field]: value }).eq('id', id)
+  async function quickUpdate(id: string, field: string, value: string | boolean) {
+    const parsed = value === 'true' ? true : value === 'false' ? false : value
+    const { error } = await supabase.from('businesses').update({ [field]: parsed }).eq('id', id)
     if (error) {
       alert('변경 실패: ' + error.message)
     } else {
-      setBusinesses(prev => prev.map(b => b.id === id ? { ...b, [field]: value } : b))
+      setBusinesses(prev => prev.map(b => b.id === id ? { ...b, [field]: parsed } : b))
     }
   }
 
@@ -78,15 +79,16 @@ export default function AdminBusinessesPage() {
               <th className="text-left px-4 py-2 font-medium text-muted w-16">지역</th>
               <th className="text-left px-4 py-2 font-medium text-muted w-24">플랜</th>
               <th className="text-left px-4 py-2 font-medium text-muted w-24">상태</th>
+              <th className="text-left px-4 py-2 font-medium text-muted w-16">공개</th>
               <th className="text-left px-4 py-2 font-medium text-muted w-28">전화</th>
               <th className="text-left px-4 py-2 font-medium text-muted w-24">관리</th>
             </tr>
           </thead>
           <tbody>
             {loading ? (
-              <tr><td colSpan={7} className="px-4 py-8 text-center text-muted">불러오는 중...</td></tr>
+              <tr><td colSpan={8} className="px-4 py-8 text-center text-muted">불러오는 중...</td></tr>
             ) : businesses.length === 0 ? (
-              <tr><td colSpan={7} className="px-4 py-8 text-center text-muted">등록된 업체가 없습니다</td></tr>
+              <tr><td colSpan={8} className="px-4 py-8 text-center text-muted">등록된 업체가 없습니다</td></tr>
             ) : businesses.map((b) => (
               <tr key={b.id} className="border-b border-border last:border-0 hover:bg-gray-50">
                 <td className="px-4 py-2.5">
@@ -122,6 +124,14 @@ export default function AdminBusinessesPage() {
                       <option key={s} value={s}>{s === 'active' ? '활성' : s === 'pending' ? '대기' : '정지'}</option>
                     ))}
                   </select>
+                </td>
+                <td className="px-4 py-2.5">
+                  <button
+                    onClick={() => quickUpdate(b.id, 'published', b.published === false ? 'true' : 'false')}
+                    className={`text-xs px-2 py-0.5 rounded-full ${b.published === false ? 'bg-gray-200 text-gray-500' : 'bg-green-100 text-green-700'}`}
+                  >
+                    {b.published === false ? '비공개' : '공개'}
+                  </button>
                 </td>
                 <td className="px-4 py-2.5 text-xs text-muted">{b.phone1}</td>
                 <td className="px-4 py-2.5">

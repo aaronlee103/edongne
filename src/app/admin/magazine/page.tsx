@@ -36,6 +36,13 @@ export default function AdminMagazinePage() {
     fetchPosts()
   }
 
+  async function togglePublished(id: string, current: boolean | null) {
+    const newVal = !(current === null || current === true)
+    const { error } = await supabase.from('posts').update({ published: newVal }).eq('id', id)
+    if (error) { alert('변경 실패: ' + error.message); return }
+    setPosts(prev => prev.map(p => p.id === id ? { ...p, published: newVal } : p))
+  }
+
   return (
     <div>
       <div className="flex items-center justify-between mb-6">
@@ -87,7 +94,15 @@ export default function AdminMagazinePage() {
                   ))}
                 </div>
               </div>
-              <button onClick={() => deletePost(post.id)} className="text-xs text-red-500 hover:underline shrink-0">삭제</button>
+              <div className="flex flex-col gap-1 shrink-0 items-end">
+                <button
+                  onClick={() => togglePublished(post.id, post.published)}
+                  className={`text-xs px-2 py-0.5 rounded-full ${post.published === false ? 'bg-gray-200 text-gray-500' : 'bg-green-100 text-green-700'}`}
+                >
+                  {post.published === false ? '비공개' : '공개'}
+                </button>
+                <button onClick={() => deletePost(post.id)} className="text-xs text-red-500 hover:underline">삭제</button>
+              </div>
             </div>
           ))}
         </div>

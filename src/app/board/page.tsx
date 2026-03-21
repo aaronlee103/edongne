@@ -30,6 +30,7 @@ export default function BoardPage() {
       .from('posts')
       .select('*, votes(value), comments(id)')
       .eq('type', 'community')
+      .or('published.is.null,published.eq.true')
       .order('created_at', { ascending: false })
       .limit(20)
 

@@ -70,6 +70,7 @@ function HomeContent() {
       .from('posts')
       .select('*, users(nickname)')
       .eq('type', 'magazine')
+      .or('published.is.null,published.eq.true')
       .order('created_at', { ascending: false })
     if (searchTerm) {
       // 제목 또는 내용에서 검색어 포함 여부 확인
@@ -86,6 +87,7 @@ function HomeContent() {
       .from('posts')
       .select('*, comments(id), votes(value)')
       .eq('type', 'community')
+      .or('published.is.null,published.eq.true')
       .order('created_at', { ascending: false })
       .limit(6)
     if (data) {
@@ -103,6 +105,7 @@ function HomeContent() {
       .from('posts')
       .select('*, users(nickname)')
       .eq('type', 'magazine')
+      .or('published.is.null,published.eq.true')
       .gte('created_at', weekAgo)
       .order('views', { ascending: false })
       .limit(5)

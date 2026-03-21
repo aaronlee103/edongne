@@ -15,7 +15,7 @@ export default function MortgagePage() {
 
   async function fetchItems() {
     setLoading(true)
-    let query = supabase.from('businesses').select('*').eq('type', 'mortgage').or('status.is.null,status.eq.active').order('kor_name')
+    let query = supabase.from('businesses').select('*').eq('type', 'mortgage').or('status.is.null,status.eq.active').or('published.is.null,published.eq.true').order('kor_name')
     if (region !== '전체') query = query.eq('region', region)
     const { data } = await query
     if (data) setItems(data)
