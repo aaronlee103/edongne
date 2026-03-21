@@ -9,8 +9,13 @@ export default function AboutPage() {
       <div className="space-y-8 text-sm leading-relaxed text-gray-700">
         <section>
           <h2 className="text-lg font-semibold mb-3 text-gray-900">이동네는</h2>
+          <p className="mb-3">
+            '동네'라는 말은 한자 '洞內(동내)'에서 비롯되었습니다. 같은 골짜기 안에서 물을 나누어 쓰고,
+            서로 기대어 살아가던 사람들의 터전을 뜻하는 말이었습니다.
+            이동네(edongne.com)는 그 이름에 담긴 정을 그대로 이어받아,
+            뉴욕과 뉴저지에서 살아가는 한인들이 서로 돕고 연결되는 온라인 동네가 되고자 합니다.
+          </p>
           <p>
-            이동네(edongne.com)는 뉴욕과 뉴저지에 거주하는 한인들을 위한 지역 커뮤니티 플랫폼입니다.
             부동산, 건축/인테리어, 법률, 융자/모기지 등 생활에 필요한 전문 업체 정보를 한곳에서 찾아볼 수 있으며,
             자유게시판, 질문답변, 사고팔고, 구인구직 등 다양한 커뮤니티 기능을 제공합니다.
           </p>
