@@ -35,6 +35,7 @@ export default function EditPostPage() {
   const [saving, setSaving] = useState(false)
   const [uploading, setUploading] = useState(false)
   const [user, setUser] = useState<any>(null)
+  const [published, setPublished] = useState(true)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const contentRef = useRef<HTMLTextAreaElement>(null)
 
@@ -86,6 +87,7 @@ export default function EditPostPage() {
     setContent(post.content)
     setThumbnail(post.thumbnail || '')
     setTags(post.tags?.join(', ') || '')
+    setPublished(post.published !== false)
     setLoading(false)
   }
 
@@ -122,7 +124,7 @@ export default function EditPostPage() {
     e.preventDefault()
     setSaving(true)
 
-    const updateData: any = { category, title, content }
+    const updateData: any = { category, title, content, published }
 
     if (isMagazine) {
       updateData.thumbnail = thumbnail || null
@@ -273,6 +275,19 @@ export default function EditPostPage() {
             />
           </div>
         )}
+
+        {/* 공개/비공개 */}
+        <div className="flex items-center gap-3 pt-2">
+          <label className="text-sm font-medium">공개 설정</label>
+          <button
+            type="button"
+            onClick={() => setPublished(!published)}
+            className={`relative w-11 h-6 rounded-full transition-colors ${published ? 'bg-green-500' : 'bg-gray-300'}`}
+          >
+            <span className={`absolute top-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform ${published ? 'left-[22px]' : 'left-0.5'}`} />
+          </button>
+          <span className={`text-xs ${published ? 'text-green-600' : 'text-gray-500'}`}>{published ? '공개' : '비공개'}</span>
+        </div>
 
         {/* 버튼 */}
         <div className="flex items-center gap-3 pt-4">
