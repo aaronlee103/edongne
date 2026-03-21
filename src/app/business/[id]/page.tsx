@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase-client'
+import { uploadImage } from '@/lib/upload'
 
 const PLAN_LABEL: Record<string, string> = { premium: 'PREMIUM', pro: 'PRO' }
 const PLAN_COLOR: Record<string, string> = {
@@ -27,6 +28,9 @@ export default function BusinessDetailPage({ params }: { params: { id: string } 
   const [text, setText] = useState('')
   const [submitting, setSubmitting] = useState(false)
   const [lightbox, setLightbox] = useState<number | null>(null)
+  const [showEdit, setShowEdit] = useState(false)
+
+  const isOwner = user && business && user.id === business.user_id
 
   useEffect(() => {
     fetchData()
@@ -134,7 +138,12 @@ export default function BusinessDetailPage({ params }: { params: { id: string } 
                 </span>
               )}
             </div>
-            <h1 className="text-2xl font-bold mt-2">{business.kor_name}</h1>
+            <div className="flex items-center gap-2 mt-2">
+              <h1 className="text-2xl font-bold">{business.kor_name}</h1>
+              {isOwner && (
+                <button onClick={() => setShowEdit(true)} className="text-xs bg-gray-100 text-secondary px-2.5 py-1 rounded-full hover:bg-gray-200 transition-colors">수정</button>
+              )}
+            </div>
             {business.eng_name && <p className="text-muted text-sm">{business.eng_name}</p>}
           </div>
         </div>
@@ -277,6 +286,220 @@ export default function BusinessDetailPage({ params }: { params: { id: string } 
           ))}
         </div>
       </section>
+
+      {/* 업체 수정 모달 (소유자용) */}
+      {showEdit && isOwner && (
+        <OwnerEditModal
+          business={business}
+          onClose={() => setShowEdit(false)}
+          onSave={() => { setShowEdit(false); fetchData() }}
+        />
+      )}
+    </div>
+  )
+}
+
+function OwnerEditModal({ business, onClose, onSave }: { business: any; onClose: () => void; onSave: () => void }) {
+  const supabase = createClient()
+  const [form, setForm] = useState({
+    kor_name: business.kor_name || '',
+    eng_name: business.eng_name || '',
+    phone1: business.phone1 || '',
+    email: business.email || '',
+    website: business.website || '',
+    region: business.region || 'NY',
+    area: business.area || '',
+    specialty: business.specialty || '',
+    tagline: business.tagline || '',
+    description: business.description || '',
+  })
+  const [heroImage, setHeroImage] = useState<string | null>(business.hero_image || null)
+  const [portfolio, setPortfolio] = useState<{ url: string; caption: string }[]>(business.portfolio || [])
+  const [saving, setSaving] = useState(false)
+  const [uploading, setUploading] = useState(false)
+
+  const update = (key: string, value: string) => setForm(f => ({ ...f, [key]: value }))
+
+  async function handleHeroUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (!file) return
+    if (file.size > 2 * 1024 * 1024) { alert('이미지는 2MB 이하만 업로드 가능합니다.'); return }
+    setUploading(true)
+    const url = await uploadImage(file)
+    if (url) setHeroImage(url)
+    else alert('이미지 업로드에 실패했습니다.')
+    setUploading(false)
+    e.target.value = ''
+  }
+
+  async function handlePortfolioUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const files = e.target.files
+    if (!files || files.length === 0) return
+    setUploading(true)
+    for (let i = 0; i < files.length; i++) {
+      const file = files[i]
+      if (file.size > 2 * 1024 * 1024) continue
+      const url = await uploadImage(file)
+      if (url) setPortfolio(prev => [...prev, { url, caption: '' }])
+    }
+    setUploading(false)
+    e.target.value = ''
+  }
+
+  function removePortfolioItem(index: number) {
+    setPortfolio(prev => prev.filter((_, i) => i !== index))
+  }
+
+  function updatePortfolioCaption(index: number, caption: string) {
+    setPortfolio(prev => prev.map((item, i) => i === index ? { ...item, caption } : item))
+  }
+
+  async function handleSave(e: React.FormEvent) {
+    e.preventDefault()
+    if (!form.kor_name.trim()) return
+    setSaving(true)
+    const { error } = await supabase.from('businesses').update({
+      ...form,
+      hero_image: heroImage,
+      portfolio: portfolio.length > 0 ? portfolio : null,
+    }).eq('id', business.id)
+    if (error) {
+      alert('수정 실패: ' + error.message)
+    } else {
+      onSave()
+    }
+    setSaving(false)
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4" onClick={onClose}>
+      <div className="bg-white rounded-xl w-full max-w-2xl max-h-[85vh] overflow-y-auto p-6" onClick={e => e.stopPropagation()}>
+        <div className="flex items-center justify-between mb-5">
+          <h2 className="text-lg font-bold">업체 정보 수정</h2>
+          <button onClick={onClose} className="text-muted hover:text-primary text-xl">✕</button>
+        </div>
+
+        <form onSubmit={handleSave} className="space-y-4">
+          {/* 대표 이미지 */}
+          <div>
+            <label className="block text-xs font-medium text-muted mb-1">대표 이미지</label>
+            <div className="flex items-center gap-3">
+              {heroImage ? (
+                <div className="relative w-20 h-20 rounded-lg overflow-hidden border border-border">
+                  <img src={heroImage} alt="대표 이미지" className="w-full h-full object-cover" />
+                  <button type="button" onClick={() => setHeroImage(null)}
+                    className="absolute top-0.5 right-0.5 bg-black/60 text-white w-5 h-5 rounded-full text-xs flex items-center justify-center hover:bg-black/80">✕</button>
+                </div>
+              ) : (
+                <div className="w-20 h-20 rounded-lg border-2 border-dashed border-gray-300 flex items-center justify-center text-gray-400 text-xs">없음</div>
+              )}
+              <label className={`text-xs px-3 py-1.5 rounded-full cursor-pointer ${uploading ? 'bg-gray-200 text-gray-400' : 'bg-gray-100 text-secondary hover:bg-gray-200'}`}>
+                {uploading ? '업로드 중...' : '이미지 변경'}
+                <input type="file" accept="image/*" onChange={handleHeroUpload} className="hidden" disabled={uploading} />
+              </label>
+            </div>
+          </div>
+
+          {/* 업체명 */}
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block text-xs font-medium text-muted mb-1">업체명 (한글) *</label>
+              <input value={form.kor_name} onChange={e => update('kor_name', e.target.value)} className="w-full border border-border rounded-lg px-3 py-2 text-sm" required />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-muted mb-1">업체명 (영문)</label>
+              <input value={form.eng_name} onChange={e => update('eng_name', e.target.value)} className="w-full border border-border rounded-lg px-3 py-2 text-sm" />
+            </div>
+          </div>
+
+          {/* 연락처 */}
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block text-xs font-medium text-muted mb-1">전화번호</label>
+              <input value={form.phone1} onChange={e => update('phone1', e.target.value)} className="w-full border border-border rounded-lg px-3 py-2 text-sm" />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-muted mb-1">이메일</label>
+              <input value={form.email} onChange={e => update('email', e.target.value)} className="w-full border border-border rounded-lg px-3 py-2 text-sm" />
+            </div>
+          </div>
+
+          {/* 웹사이트 */}
+          <div>
+            <label className="block text-xs font-medium text-muted mb-1">웹사이트</label>
+            <input value={form.website} onChange={e => update('website', e.target.value)} className="w-full border border-border rounded-lg px-3 py-2 text-sm" />
+          </div>
+
+          {/* 지역 */}
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block text-xs font-medium text-muted mb-1">주</label>
+              <select value={form.region} onChange={e => update('region', e.target.value)} className="w-full border border-border rounded-lg px-3 py-2 text-sm">
+                <option value="NY">NY</option><option value="NJ">NJ</option>
+              </select>
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-muted mb-1">상세 지역</label>
+              <input value={form.area} onChange={e => update('area', e.target.value)} className="w-full border border-border rounded-lg px-3 py-2 text-sm" />
+            </div>
+          </div>
+
+          {/* 전문분야 */}
+          <div>
+            <label className="block text-xs font-medium text-muted mb-1">전문분야</label>
+            <input value={form.specialty} onChange={e => update('specialty', e.target.value)} className="w-full border border-border rounded-lg px-3 py-2 text-sm" />
+          </div>
+
+          {/* 광고 문구 */}
+          <div>
+            <label className="block text-xs font-medium text-muted mb-1">광고 문구</label>
+            <input value={form.tagline} onChange={e => update('tagline', e.target.value)} className="w-full border border-border rounded-lg px-3 py-2 text-sm" maxLength={100} />
+          </div>
+
+          {/* 업체 소개 */}
+          <div>
+            <label className="block text-xs font-medium text-muted mb-1">업체 소개</label>
+            <textarea value={form.description} onChange={e => update('description', e.target.value)}
+              className="w-full border border-border rounded-lg px-3 py-2 text-sm min-h-[80px] resize-y" maxLength={1000} />
+          </div>
+
+          {/* 포트폴리오 이미지 */}
+          <div>
+            <label className="block text-xs font-medium text-muted mb-1">포트폴리오 이미지</label>
+            {portfolio.length > 0 && (
+              <div className="grid grid-cols-3 gap-2 mb-2">
+                {portfolio.map((item, i) => (
+                  <div key={i} className="relative border border-border rounded-lg overflow-hidden">
+                    <img src={item.url} alt="" className="w-full h-24 object-cover" />
+                    <button type="button" onClick={() => removePortfolioItem(i)}
+                      className="absolute top-1 right-1 bg-black/60 text-white w-5 h-5 rounded-full text-xs flex items-center justify-center hover:bg-black/80">✕</button>
+                    <input
+                      type="text"
+                      value={item.caption}
+                      onChange={e => updatePortfolioCaption(i, e.target.value)}
+                      placeholder="설명 (선택)"
+                      className="w-full px-2 py-1 text-xs border-t border-border focus:outline-none"
+                    />
+                  </div>
+                ))}
+              </div>
+            )}
+            <label className={`inline-block text-xs px-3 py-1.5 rounded-full cursor-pointer ${uploading ? 'bg-gray-200 text-gray-400' : 'bg-gray-100 text-secondary hover:bg-gray-200'}`}>
+              {uploading ? '업로드 중...' : '+ 이미지 추가'}
+              <input type="file" accept="image/*" multiple onChange={handlePortfolioUpload} className="hidden" disabled={uploading} />
+            </label>
+            <span className="text-xs text-muted ml-2">최대 2MB, 여러 장 선택 가능</span>
+          </div>
+
+          {/* 버튼 */}
+          <div className="flex justify-end gap-2 pt-2">
+            <button type="button" onClick={onClose} className="px-4 py-2 text-sm text-muted hover:text-primary">취소</button>
+            <button type="submit" disabled={saving || uploading} className="bg-black text-white px-6 py-2 rounded-full text-sm hover:bg-gray-800 disabled:opacity-50">
+              {saving ? '저장 중...' : '저장'}
+            </button>
+          </div>
+        </form>
+      </div>
     </div>
   )
 }

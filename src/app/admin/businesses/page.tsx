@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase-client'
+import { uploadImage } from '@/lib/upload'
 
 const TYPES: Record<string, string> = { realtor: '부동산', builder: '건축', lawyer: '변호사', mortgage: '융자' }
 const PLAN_OPTIONS = ['basic', 'pro', 'premium']
@@ -164,15 +165,56 @@ function EditBusinessModal({ supabase, business, onClose, onSave }: { supabase: 
     plan: business.plan || 'basic',
     status: business.status || 'active',
   })
+  const [heroImage, setHeroImage] = useState<string | null>(business.hero_image || null)
+  const [portfolio, setPortfolio] = useState<{ url: string; caption: string }[]>(business.portfolio || [])
   const [saving, setSaving] = useState(false)
+  const [uploading, setUploading] = useState(false)
 
   const update = (key: string, value: string) => setForm(f => ({ ...f, [key]: value }))
+
+  async function handleHeroUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (!file) return
+    if (file.size > 2 * 1024 * 1024) { alert('이미지는 2MB 이하만 업로드 가능합니다.'); return }
+    setUploading(true)
+    const url = await uploadImage(file)
+    if (url) setHeroImage(url)
+    else alert('이미지 업로드에 실패했습니다.')
+    setUploading(false)
+    e.target.value = ''
+  }
+
+  async function handlePortfolioUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const files = e.target.files
+    if (!files || files.length === 0) return
+    setUploading(true)
+    for (let i = 0; i < files.length; i++) {
+      const file = files[i]
+      if (file.size > 2 * 1024 * 1024) continue
+      const url = await uploadImage(file)
+      if (url) setPortfolio(prev => [...prev, { url, caption: '' }])
+    }
+    setUploading(false)
+    e.target.value = ''
+  }
+
+  function removePortfolioItem(index: number) {
+    setPortfolio(prev => prev.filter((_, i) => i !== index))
+  }
+
+  function updatePortfolioCaption(index: number, caption: string) {
+    setPortfolio(prev => prev.map((item, i) => i === index ? { ...item, caption } : item))
+  }
 
   async function handleSave(e: React.FormEvent) {
     e.preventDefault()
     if (!form.kor_name.trim()) return
     setSaving(true)
-    const { error } = await supabase.from('businesses').update(form).eq('id', business.id)
+    const { error } = await supabase.from('businesses').update({
+      ...form,
+      hero_image: heroImage,
+      portfolio: portfolio.length > 0 ? portfolio : null,
+    }).eq('id', business.id)
     if (error) {
       alert('수정 실패: ' + error.message)
     } else {
@@ -210,6 +252,26 @@ function EditBusinessModal({ supabase, business, onClose, onSave }: { supabase: 
               <select value={form.status} onChange={e => update('status', e.target.value)} className="w-full border border-border rounded-lg px-3 py-2 text-sm">
                 <option value="active">활성</option><option value="pending">대기</option><option value="suspended">정지</option>
               </select>
+            </div>
+          </div>
+
+          {/* 대표 이미지 */}
+          <div>
+            <label className="block text-xs font-medium text-muted mb-1">대표 이미지</label>
+            <div className="flex items-center gap-3">
+              {heroImage ? (
+                <div className="relative w-20 h-20 rounded-lg overflow-hidden border border-border">
+                  <img src={heroImage} alt="대표 이미지" className="w-full h-full object-cover" />
+                  <button type="button" onClick={() => setHeroImage(null)}
+                    className="absolute top-0.5 right-0.5 bg-black/60 text-white w-5 h-5 rounded-full text-xs flex items-center justify-center hover:bg-black/80">✕</button>
+                </div>
+              ) : (
+                <div className="w-20 h-20 rounded-lg border-2 border-dashed border-gray-300 flex items-center justify-center text-gray-400 text-xs">없음</div>
+              )}
+              <label className={`text-xs px-3 py-1.5 rounded-full cursor-pointer ${uploading ? 'bg-gray-200 text-gray-400' : 'bg-gray-100 text-secondary hover:bg-gray-200'}`}>
+                {uploading ? '업로드 중...' : '이미지 변경'}
+                <input type="file" accept="image/*" onChange={handleHeroUpload} className="hidden" disabled={uploading} />
+              </label>
             </div>
           </div>
 
@@ -276,10 +338,38 @@ function EditBusinessModal({ supabase, business, onClose, onSave }: { supabase: 
               className="w-full border border-border rounded-lg px-3 py-2 text-sm min-h-[80px] resize-y" maxLength={1000} />
           </div>
 
+          {/* 포트폴리오 이미지 */}
+          <div>
+            <label className="block text-xs font-medium text-muted mb-1">포트폴리오 이미지</label>
+            {portfolio.length > 0 && (
+              <div className="grid grid-cols-3 gap-2 mb-2">
+                {portfolio.map((item, i) => (
+                  <div key={i} className="relative border border-border rounded-lg overflow-hidden">
+                    <img src={item.url} alt="" className="w-full h-24 object-cover" />
+                    <button type="button" onClick={() => removePortfolioItem(i)}
+                      className="absolute top-1 right-1 bg-black/60 text-white w-5 h-5 rounded-full text-xs flex items-center justify-center hover:bg-black/80">✕</button>
+                    <input
+                      type="text"
+                      value={item.caption}
+                      onChange={e => updatePortfolioCaption(i, e.target.value)}
+                      placeholder="설명 (선택)"
+                      className="w-full px-2 py-1 text-xs border-t border-border focus:outline-none"
+                    />
+                  </div>
+                ))}
+              </div>
+            )}
+            <label className={`inline-block text-xs px-3 py-1.5 rounded-full cursor-pointer ${uploading ? 'bg-gray-200 text-gray-400' : 'bg-gray-100 text-secondary hover:bg-gray-200'}`}>
+              {uploading ? '업로드 중...' : '+ 이미지 추가'}
+              <input type="file" accept="image/*" multiple onChange={handlePortfolioUpload} className="hidden" disabled={uploading} />
+            </label>
+            <span className="text-xs text-muted ml-2">최대 2MB, 여러 장 선택 가능</span>
+          </div>
+
           {/* 버튼 */}
           <div className="flex justify-end gap-2 pt-2">
             <button type="button" onClick={onClose} className="px-4 py-2 text-sm text-muted hover:text-primary">취소</button>
-            <button type="submit" disabled={saving} className="bg-black text-white px-6 py-2 rounded-full text-sm hover:bg-gray-800 disabled:opacity-50">
+            <button type="submit" disabled={saving || uploading} className="bg-black text-white px-6 py-2 rounded-full text-sm hover:bg-gray-800 disabled:opacity-50">
               {saving ? '저장 중...' : '저장'}
             </button>
           </div>
