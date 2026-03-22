@@ -79,6 +79,7 @@ export default function WritePage() {
             value={title}
             onChange={(e) => setTitle(e.target.value)}
             placeholder="제목을 입력하세요"
+            maxLength={200}
             className="w-full px-4 py-2.5 border border-border rounded-lg text-sm focus:outline-none focus:border-black"
             required
           />
@@ -90,6 +91,7 @@ export default function WritePage() {
             value={content}
             onChange={(e) => setContent(e.target.value)}
             placeholder="내용을 입력하세요"
+            maxLength={10000}
             className="w-full px-4 py-3 border border-border rounded-lg text-sm min-h-[300px] resize-y focus:outline-none focus:border-black"
             required
           />

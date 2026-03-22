@@ -224,6 +224,7 @@ export default function EditPostPage() {
             value={title}
             onChange={(e) => setTitle(e.target.value)}
             placeholder="제목을 입력하세요"
+            maxLength={200}
             className="w-full px-4 py-2.5 border border-border rounded-lg text-sm focus:outline-none focus:border-black"
             required
           />

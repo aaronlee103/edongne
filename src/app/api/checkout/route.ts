@@ -1,12 +1,29 @@
 import { NextRequest, NextResponse } from 'next/server'
 import Stripe from 'stripe'
 import { createClient } from '@supabase/supabase-js'
+import { createServerClient } from '@supabase/ssr'
 
 export async function POST(req: NextRequest) {
   try {
     const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || '', {
       apiVersion: '2023-10-16',
     })
+
+    // 사용자 인증 확인
+    const supabaseAuth = createServerClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      {
+        cookies: {
+          getAll() { return req.cookies.getAll() },
+          setAll() {},
+        },
+      }
+    )
+    const { data: { user } } = await supabaseAuth.auth.getUser()
+    if (!user) {
+      return NextResponse.json({ error: '로그인이 필요합니다.' }, { status: 401 })
+    }
 
     const supabase = createClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL || '',
@@ -19,15 +36,19 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'business_id가 필요합니다.' }, { status: 400 })
     }
 
-    // 업체 정보 조회
+    // 업체 정보 조회 + 소유권 확인
     const { data: biz } = await supabase
       .from('businesses')
-      .select('kor_name')
+      .select('kor_name, user_id')
       .eq('id', business_id)
       .single()
 
     if (!biz) {
       return NextResponse.json({ error: '업체를 찾을 수 없습니다.' }, { status: 404 })
+    }
+
+    if (biz.user_id !== user.id) {
+      return NextResponse.json({ error: '본인의 업체만 결제할 수 있습니다.' }, { status: 403 })
     }
 
     const session = await stripe.checkout.sessions.create({
