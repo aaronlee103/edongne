@@ -24,9 +24,13 @@ export default function AdminUsersPage() {
   }
 
   async function updateRole(userId: string, role: string) {
-    const { error } = await supabase.from('users').update({ role }).eq('id', userId)
-    if (error) alert('역할 변경 실패: ' + error.message)
-    else fetchUsers()
+    const { error, count } = await supabase.from('users').update({ role }).eq('id', userId).select()
+    if (error) {
+      alert('역할 변경 실패: ' + error.message)
+    } else if (!count && count !== null) {
+      alert('역할 변경 권한이 없습니다. Supabase RLS 정책을 확인하세요.')
+    }
+    fetchUsers()
   }
 
   return (

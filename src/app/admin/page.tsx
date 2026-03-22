@@ -18,14 +18,15 @@ export default function AdminDashboard() {
   }, [])
 
   async function fetchStats() {
-    const [posts, businesses, reports] = await Promise.all([
+    const [posts, businesses, reports, usersRes] = await Promise.all([
       supabase.from('posts').select('id', { count: 'exact', head: true }),
       supabase.from('businesses').select('id', { count: 'exact', head: true }),
       supabase.from('reports').select('id', { count: 'exact', head: true }),
+      supabase.from('users').select('id', { count: 'exact', head: true }),
     ])
     setStats({
       posts: posts.count || 0,
-      users: 0,
+      users: usersRes.count || 0,
       businesses: businesses.count || 0,
       reports: reports.count || 0,
     })
