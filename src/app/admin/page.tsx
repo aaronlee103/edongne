@@ -49,6 +49,42 @@ export default function AdminDashboard() {
         <StatCard label="회원" value={stats.users} href="/admin/users" />
       </div>
 
+      {/* 방문자 분석 */}
+      <div className="mb-8 border border-border rounded-lg p-4">
+        <div className="flex items-center justify-between mb-3">
+          <h2 className="font-bold">📈 방문자 분석</h2>
+          <a
+            href="https://analytics.google.com"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-xs text-blue-600 hover:underline"
+          >
+            Google Analytics 열기 →
+          </a>
+        </div>
+        {process.env.NEXT_PUBLIC_GA_ID ? (
+          <div className="bg-bg-light rounded-lg p-6 text-center">
+            <p className="text-sm text-secondary mb-3">실시간 방문자 및 상세 분석은 Google Analytics에서 확인하세요.</p>
+            <a
+              href="https://analytics.google.com"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-block bg-black text-white px-4 py-2 rounded-full text-sm hover:bg-gray-800 transition-colors"
+            >
+              대시보드 보기
+            </a>
+          </div>
+        ) : (
+          <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+            <p className="text-sm text-yellow-800 font-medium mb-1">Google Analytics 미연결</p>
+            <p className="text-xs text-yellow-700">
+              Vercel 환경변수에 <code className="bg-yellow-100 px-1 rounded">NEXT_PUBLIC_GA_ID</code>를 추가하세요.
+              (예: G-XXXXXXXXXX)
+            </p>
+          </div>
+        )}
+      </div>
+
       {/* 빠른 글쓰기 */}
       <QuickWrite supabase={supabase} onWrite={fetchRecentPosts} />
 

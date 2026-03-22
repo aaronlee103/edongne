@@ -3,6 +3,7 @@ import { Suspense } from 'react'
 import './globals.css'
 import Header from '@/components/layout/Header'
 import Footer from '@/components/layout/Footer'
+import GoogleAnalytics from '@/components/GoogleAnalytics'
 
 export const metadata: Metadata = {
   title: '이동네 - 뉴욕·뉴저지 한인 커뮤니티',
@@ -18,6 +19,7 @@ export default function RootLayout({
   return (
     <html lang="ko">
       <body className="min-h-screen flex flex-col">
+        <GoogleAnalytics />
         <Suspense fallback={null}>
           <Header />
         </Suspense>
