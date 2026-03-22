@@ -166,9 +166,13 @@ function HomeContent() {
     return `${Math.floor(seconds / 86400)}일`
   }
 
-  // 에디터 픽 ID를 제외한 나머지 글을 그리드에 표시
+  // 에디터 픽 ID를 제외한 나머지 글
   const editorPickIds = new Set(editorPicks.map(p => p.id))
-  const gridPosts = allPosts.filter(p => !editorPickIds.has(p.id))
+  const nonEditorPosts = allPosts.filter(p => !editorPickIds.has(p.id))
+  // 슬라이드 아래 2개 카드
+  const featuredPosts = nonEditorPosts.slice(0, 2)
+  // 나머지 그리드 (페이지네이션)
+  const gridPosts = nonEditorPosts.slice(2)
   const totalPages = Math.ceil(gridPosts.length / ITEMS_PER_PAGE)
   const paginatedPosts = gridPosts.slice(
     (currentPage - 1) * ITEMS_PER_PAGE,
@@ -262,6 +266,31 @@ function HomeContent() {
                     <p className="text-muted text-sm mb-2">아직 매거진 글이 없습니다</p>
                     <Link href="/admin/magazine" className="text-xs text-primary hover:underline">관리자에서 작성하기</Link>
                   </div>
+                </div>
+              )}
+
+              {/* 슬라이드 아래 최신 2개 카드 */}
+              {featuredPosts.length > 0 && (
+                <div className="grid grid-cols-2 gap-4 mt-4">
+                  {featuredPosts.map((post) => (
+                    <Link key={post.id} href={`/post/${post.id}`} className="group block">
+                      <div className="rounded-lg overflow-hidden border border-border hover:shadow-md transition-shadow">
+                        {post.thumbnail ? (
+                          <img src={post.thumbnail} alt="" className="w-full h-28 object-cover" />
+                        ) : (
+                          <div className="w-full h-28 bg-gradient-to-br from-gray-100 to-gray-200" />
+                        )}
+                        <div className="p-3">
+                          <h3 className="text-sm font-bold line-clamp-2 group-hover:text-secondary transition-colors">{post.title}</h3>
+                          <div className="flex items-center gap-2 mt-2 text-xs text-muted">
+                            {post.users?.nickname && <span>{post.users.nickname}</span>}
+                            {post.users?.nickname && <span>·</span>}
+                            <span>{timeAgo(post.created_at)}</span>
+                          </div>
+                        </div>
+                      </div>
+                    </Link>
+                  ))}
                 </div>
               )}
             </div>
