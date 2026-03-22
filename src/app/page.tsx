@@ -31,6 +31,7 @@ function HomeContent() {
   const searchParams = useSearchParams()
   const [issueCategory, setIssueCategory] = useState('all')
   const [allPosts, setAllPosts] = useState<any[]>([])
+  const [editorPicks, setEditorPicks] = useState<any[]>([])
   const [popularPosts, setPopularPosts] = useState<any[]>([])
   const [weeklyPopular, setWeeklyPopular] = useState<any[]>([])
   const [businessCounts, setBusinessCounts] = useState({ realtor: 0, builder: 0, lawyer: 0, mortgage: 0 })
@@ -55,6 +56,7 @@ function HomeContent() {
   }, [searchParams])
 
   useEffect(() => {
+    fetchEditorPicks()
     fetchPopularPosts()
     fetchWeeklyPopular()
     fetchBusinessCounts()
@@ -64,6 +66,18 @@ function HomeContent() {
     fetchAllPosts()
     setCurrentPage(1)
   }, [issueCategory, searchTerm])
+
+  async function fetchEditorPicks() {
+    const { data } = await supabase
+      .from('posts')
+      .select('*, users(nickname)')
+      .eq('type', 'magazine')
+      .eq('category', 'editor')
+      .or('published.is.null,published.eq.true')
+      .order('created_at', { ascending: false })
+      .limit(3)
+    if (data) setEditorPicks(data)
+  }
 
   async function fetchAllPosts() {
     let query = supabase
@@ -134,10 +148,12 @@ function HomeContent() {
     return `${Math.floor(seconds / 86400)}일`
   }
 
-  // Split posts: hero(1) + featured(2) + grid(rest with pagination)
-  const heroPosts = allPosts.slice(0, 1)
-  const featuredPosts = allPosts.slice(1, 3)
-  const gridPosts = allPosts.slice(3)
+  // 에디터 픽은 항상 히어로 영역에 표시
+  const heroPosts = editorPicks.slice(0, 1)
+  const featuredPosts = editorPicks.slice(1, 3)
+  // 에디터 픽 ID를 제외한 나머지 글을 그리드에 표시
+  const editorPickIds = new Set(editorPicks.map(p => p.id))
+  const gridPosts = allPosts.filter(p => !editorPickIds.has(p.id))
   const totalPages = Math.ceil(gridPosts.length / ITEMS_PER_PAGE)
   const paginatedPosts = gridPosts.slice(
     (currentPage - 1) * ITEMS_PER_PAGE,
