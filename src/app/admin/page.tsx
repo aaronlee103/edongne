@@ -46,29 +46,33 @@ export default function AdminDashboard() {
     const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate()).toISOString()
     const weekStart = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 7).toISOString()
 
+    // visitor_id 기준 고유 방문자 집계
     const [todayRes, weekRes, totalRes, topRes] = await Promise.all([
-      supabase.from('page_views').select('id', { count: 'exact', head: true }).gte('created_at', todayStart),
-      supabase.from('page_views').select('id', { count: 'exact', head: true }).gte('created_at', weekStart),
-      supabase.from('page_views').select('id', { count: 'exact', head: true }),
-      supabase.from('page_views').select('path').gte('created_at', weekStart),
+      supabase.from('page_views').select('visitor_id').gte('created_at', todayStart).not('visitor_id', 'is', null),
+      supabase.from('page_views').select('visitor_id').gte('created_at', weekStart).not('visitor_id', 'is', null),
+      supabase.from('page_views').select('visitor_id').not('visitor_id', 'is', null),
+      supabase.from('page_views').select('path, visitor_id').gte('created_at', weekStart),
     ])
 
+    const uniqueCount = (data: any[] | null) => data ? new Set(data.map((r: any) => r.visitor_id)).size : 0
+
     setViewStats({
-      today: todayRes.count || 0,
-      week: weekRes.count || 0,
-      total: totalRes.count || 0,
+      today: uniqueCount(todayRes.data),
+      week: uniqueCount(weekRes.data),
+      total: uniqueCount(totalRes.data),
     })
 
-    // 인기 페이지 집계
+    // 인기 페이지 집계 (고유 방문자 기준)
     if (topRes.data) {
-      const counts: Record<string, number> = {}
+      const pathVisitors: Record<string, Set<string>> = {}
       topRes.data.forEach((row: any) => {
-        counts[row.path] = (counts[row.path] || 0) + 1
+        if (!pathVisitors[row.path]) pathVisitors[row.path] = new Set()
+        if (row.visitor_id) pathVisitors[row.path].add(row.visitor_id)
       })
-      const sorted = Object.entries(counts)
-        .sort((a, b) => b[1] - a[1])
+      const sorted = Object.entries(pathVisitors)
+        .sort((a, b) => b[1].size - a[1].size)
         .slice(0, 10)
-        .map(([path, count]) => ({ path, count }))
+        .map(([path, visitors]) => ({ path, count: visitors.size }))
       setTopPages(sorted)
     }
   }
@@ -88,7 +92,7 @@ export default function AdminDashboard() {
       {/* 방문자 분석 */}
       <div className="mb-8 border border-border rounded-lg p-4">
         <div className="flex items-center justify-between mb-3">
-          <h2 className="font-bold">📈 방문자 분석</h2>
+          <h2 className="font-bold">📈 실제 방문자 분석</h2>
           <a
             href="https://analytics.google.com"
             target="_blank"
