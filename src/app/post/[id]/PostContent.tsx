@@ -26,6 +26,13 @@ function sanitizeUrl(url: string): string {
   return '#'
 }
 
+// 셀 안의 인라인 마크다운 (볼드, 이탤릭) 처리
+function renderInline(text: string): string {
+  return escapeHtml(text)
+    .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+    .replace(/\*(.+?)\*/g, '<em>$1</em>')
+}
+
 function renderMarkdownTable(block: string): string {
   const rows = block.trim().split('\n').filter(r => r.trim())
   if (rows.length < 2) return block
@@ -42,12 +49,12 @@ function renderMarkdownTable(block: string): string {
 
   let html = '<div class="overflow-x-auto my-4"><table class="w-full text-sm border-collapse border border-gray-200">'
   html += '<thead><tr class="bg-gray-50">'
-  headers.forEach(h => { html += `<th class="border border-gray-200 px-3 py-2 text-left font-bold">${escapeHtml(h)}</th>` })
+  headers.forEach(h => { html += `<th class="border border-gray-200 px-3 py-2 text-left font-bold">${renderInline(h)}</th>` })
   html += '</tr></thead><tbody>'
   bodyRows.forEach(row => {
     const cells = parseRow(row)
     html += '<tr class="hover:bg-gray-50">'
-    cells.forEach(c => { html += `<td class="border border-gray-200 px-3 py-2">${escapeHtml(c)}</td>` })
+    cells.forEach(c => { html += `<td class="border border-gray-200 px-3 py-2">${renderInline(c)}</td>` })
     html += '</tr>'
   })
   html += '</tbody></table></div>'
@@ -96,6 +103,7 @@ function renderMarkdown(text: string): string {
   )
 
   let html = processed
+    .replace(/^---$/gm, '<hr class="my-6 border-t border-gray-300" />')
     .replace(/^### (.+)$/gm, '<h3 class="text-lg font-bold mt-6 mb-2">$1</h3>')
     .replace(/^## (.+)$/gm, '<h2 class="text-xl font-bold mt-8 mb-3">$1</h2>')
     .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
