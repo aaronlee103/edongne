@@ -4,6 +4,7 @@ import './globals.css'
 import Header from '@/components/layout/Header'
 import Footer from '@/components/layout/Footer'
 import GoogleAnalytics from '@/components/GoogleAnalytics'
+import PageTracker from '@/components/PageTracker'
 
 export const metadata: Metadata = {
   title: '이동네 - 뉴욕·뉴저지 한인 커뮤니티',
@@ -20,6 +21,7 @@ export default function RootLayout({
     <html lang="ko">
       <body className="min-h-screen flex flex-col">
         <GoogleAnalytics />
+        <PageTracker />
         <Suspense fallback={null}>
           <Header />
         </Suspense>

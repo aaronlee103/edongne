@@ -8,10 +8,13 @@ export default function AdminDashboard() {
   const supabase = createClient()
   const [stats, setStats] = useState({ posts: 0, users: 0, businesses: 0, reports: 0 })
   const [recentPosts, setRecentPosts] = useState<any[]>([])
+  const [viewStats, setViewStats] = useState({ today: 0, week: 0, total: 0 })
+  const [topPages, setTopPages] = useState<{ path: string; count: number }[]>([])
 
   useEffect(() => {
     fetchStats()
     fetchRecentPosts()
+    fetchViewStats()
   }, [])
 
   async function fetchStats() {
@@ -37,6 +40,38 @@ export default function AdminDashboard() {
     if (data) setRecentPosts(data)
   }
 
+  async function fetchViewStats() {
+    const now = new Date()
+    const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate()).toISOString()
+    const weekStart = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 7).toISOString()
+
+    const [todayRes, weekRes, totalRes, topRes] = await Promise.all([
+      supabase.from('page_views').select('id', { count: 'exact', head: true }).gte('created_at', todayStart),
+      supabase.from('page_views').select('id', { count: 'exact', head: true }).gte('created_at', weekStart),
+      supabase.from('page_views').select('id', { count: 'exact', head: true }),
+      supabase.from('page_views').select('path').gte('created_at', weekStart),
+    ])
+
+    setViewStats({
+      today: todayRes.count || 0,
+      week: weekRes.count || 0,
+      total: totalRes.count || 0,
+    })
+
+    // 인기 페이지 집계
+    if (topRes.data) {
+      const counts: Record<string, number> = {}
+      topRes.data.forEach((row: any) => {
+        counts[row.path] = (counts[row.path] || 0) + 1
+      })
+      const sorted = Object.entries(counts)
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 10)
+        .map(([path, count]) => ({ path, count }))
+      setTopPages(sorted)
+    }
+  }
+
   return (
     <div>
       <h1 className="text-2xl font-bold mb-6">대시보드</h1>
@@ -59,28 +94,41 @@ export default function AdminDashboard() {
             rel="noopener noreferrer"
             className="text-xs text-blue-600 hover:underline"
           >
-            Google Analytics 열기 →
+            Google Analytics 상세 →
           </a>
         </div>
-        {process.env.NEXT_PUBLIC_GA_ID ? (
-          <div className="bg-bg-light rounded-lg p-6 text-center">
-            <p className="text-sm text-secondary mb-3">실시간 방문자 및 상세 분석은 Google Analytics에서 확인하세요.</p>
-            <a
-              href="https://analytics.google.com"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-block bg-black text-white px-4 py-2 rounded-full text-sm hover:bg-gray-800 transition-colors"
-            >
-              대시보드 보기
-            </a>
+
+        {/* 방문수 카드 */}
+        <div className="grid grid-cols-3 gap-3 mb-4">
+          <div className="bg-bg-light rounded-lg p-3 text-center">
+            <p className="text-xs text-muted mb-1">오늘</p>
+            <p className="text-xl font-bold">{viewStats.today}</p>
           </div>
-        ) : (
-          <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-            <p className="text-sm text-yellow-800 font-medium mb-1">Google Analytics 미연결</p>
-            <p className="text-xs text-yellow-700">
-              Vercel 환경변수에 <code className="bg-yellow-100 px-1 rounded">NEXT_PUBLIC_GA_ID</code>를 추가하세요.
-              (예: G-XXXXXXXXXX)
-            </p>
+          <div className="bg-bg-light rounded-lg p-3 text-center">
+            <p className="text-xs text-muted mb-1">이번 주</p>
+            <p className="text-xl font-bold">{viewStats.week}</p>
+          </div>
+          <div className="bg-bg-light rounded-lg p-3 text-center">
+            <p className="text-xs text-muted mb-1">전체</p>
+            <p className="text-xl font-bold">{viewStats.total}</p>
+          </div>
+        </div>
+
+        {/* 인기 페이지 */}
+        {topPages.length > 0 && (
+          <div>
+            <p className="text-xs text-muted mb-2 font-medium">이번 주 인기 페이지</p>
+            <div className="space-y-1">
+              {topPages.map((page, i) => (
+                <div key={page.path} className="flex items-center justify-between text-sm py-1.5 px-2 rounded hover:bg-gray-50">
+                  <span className="truncate flex-1">
+                    <span className="text-muted mr-2">{i + 1}.</span>
+                    {page.path === '/' ? '메인 페이지' : page.path}
+                  </span>
+                  <span className="text-muted text-xs ml-2 shrink-0">{page.count}회</span>
+                </div>
+              ))}
+            </div>
           </div>
         )}
       </div>
