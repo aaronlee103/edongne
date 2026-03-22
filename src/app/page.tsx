@@ -144,6 +144,17 @@ function HomeContent() {
     currentPage * ITEMS_PER_PAGE
   )
 
+  function stripMarkdown(text: string): string {
+    return text
+      .replace(/!\[[^\]]*\]\([^)]+\)/g, '')   // 이미지 제거
+      .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1') // 링크 → 텍스트만
+      .replace(/^#{1,3}\s+/gm, '')              // 헤딩 제거
+      .replace(/\*\*(.+?)\*\*/g, '$1')          // 볼드 제거
+      .replace(/\*(.+?)\*/g, '$1')              // 이탤릭 제거
+      .replace(/\n{2,}/g, ' ')                  // 줄바꿈 → 공백
+      .trim()
+  }
+
   function handleCategoryChange(key: string) {
     setIssueCategory(key)
     setCurrentPage(1)
@@ -181,7 +192,7 @@ function HomeContent() {
                     <div className="absolute inset-0 flex flex-col justify-end p-6">
                       <span className="inline-block bg-white text-black text-xs font-bold px-2 py-1 rounded mb-3 w-fit">에디터 픽</span>
                       <h2 className="text-white text-xl md:text-2xl font-bold leading-tight mb-2">{heroPosts[0].title}</h2>
-                      <p className="text-gray-300 text-sm line-clamp-2">{heroPosts[0].content?.substring(0, 120)}</p>
+                      <p className="text-gray-300 text-sm line-clamp-2">{stripMarkdown(heroPosts[0].content || '').substring(0, 120)}</p>
                       {heroPosts[0].users?.nickname && (
                         <p className="text-gray-400 text-xs mt-2">by {heroPosts[0].users.nickname}</p>
                       )}
