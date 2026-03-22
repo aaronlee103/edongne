@@ -6,7 +6,7 @@ import Footer from '@/components/layout/Footer'
 import GoogleAnalytics from '@/components/GoogleAnalytics'
 import PageTracker from '@/components/PageTracker'
 
-const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://edongne.com'
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://www.edongne.com'
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
