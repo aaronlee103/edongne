@@ -104,6 +104,7 @@ function renderMarkdown(text: string): string {
 
   let html = processed
     .replace(/^---$/gm, '<hr class="my-6 border-t border-gray-300" />')
+    .replace(/^#### (.+)$/gm, '<h4 class="text-base font-bold mt-5 mb-2">$1</h4>')
     .replace(/^### (.+)$/gm, '<h3 class="text-lg font-bold mt-6 mb-2">$1</h3>')
     .replace(/^## (.+)$/gm, '<h2 class="text-xl font-bold mt-8 mb-3">$1</h2>')
     .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
