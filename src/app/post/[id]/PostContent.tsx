@@ -26,9 +26,48 @@ function sanitizeUrl(url: string): string {
   return '#'
 }
 
+function renderMarkdownTable(block: string): string {
+  const rows = block.trim().split('\n').filter(r => r.trim())
+  if (rows.length < 2) return block
+
+  // 구분선 행 찾기 (|---|---|)
+  const sepIdx = rows.findIndex(r => /^\|?\s*:?-+:?\s*(\|\s*:?-+:?\s*)+\|?\s*$/.test(r))
+  if (sepIdx < 1) return block
+
+  const parseRow = (row: string) =>
+    row.replace(/^\|/, '').replace(/\|$/, '').split('|').map(c => c.trim())
+
+  const headers = parseRow(rows[sepIdx - 1])
+  const bodyRows = rows.slice(sepIdx + 1)
+
+  let html = '<div class="overflow-x-auto my-4"><table class="w-full text-sm border-collapse border border-gray-200">'
+  html += '<thead><tr class="bg-gray-50">'
+  headers.forEach(h => { html += `<th class="border border-gray-200 px-3 py-2 text-left font-bold">${escapeHtml(h)}</th>` })
+  html += '</tr></thead><tbody>'
+  bodyRows.forEach(row => {
+    const cells = parseRow(row)
+    html += '<tr class="hover:bg-gray-50">'
+    cells.forEach(c => { html += `<td class="border border-gray-200 px-3 py-2">${escapeHtml(c)}</td>` })
+    html += '</tr>'
+  })
+  html += '</tbody></table></div>'
+  return html
+}
+
 function renderMarkdown(text: string): string {
   const tokens: string[] = []
-  let processed = text
+
+  // 1) 테이블 블록을 먼저 추출
+  let processed = text.replace(
+    /((?:^|\n)\|.+\|[ \t]*\n\|[\s:|-]+\|[ \t]*\n(?:\|.+\|[ \t]*\n?)+)/g,
+    (_m, tableBlock) => {
+      tokens.push(renderMarkdownTable(tableBlock))
+      return `\n%%TOKEN_${tokens.length - 1}%%\n`
+    }
+  )
+
+  // 2) 이미지, 링크 추출
+  processed = processed
     .replace(/!\[([^\]]*)\]\(([^)]+)\)/g, (_m, alt, url) => {
       const safeUrl = sanitizeUrl(url)
       const safeAlt = escapeHtml(alt)
@@ -43,6 +82,18 @@ function renderMarkdown(text: string): string {
     })
 
   processed = escapeHtml(processed)
+
+  // 3) 리스트 처리 (- 항목)
+  processed = processed.replace(
+    /((?:^|\n)(?:- .+\n?)+)/g,
+    (_m, listBlock) => {
+      const items = listBlock.trim().split('\n')
+        .filter((l: string) => l.trim().startsWith('- '))
+        .map((l: string) => `<li class="ml-4 mb-1">${l.trim().substring(2)}</li>`)
+        .join('')
+      return `<ul class="list-disc pl-4 my-3">${items}</ul>`
+    }
+  )
 
   let html = processed
     .replace(/^### (.+)$/gm, '<h3 class="text-lg font-bold mt-6 mb-2">$1</h3>')
