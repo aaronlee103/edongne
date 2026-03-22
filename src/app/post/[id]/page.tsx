@@ -2,7 +2,7 @@ import { Metadata } from 'next'
 import { createServerSupabase } from '@/lib/supabase-server'
 import PostContent from './PostContent'
 
-const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://edongne.vercel.app'
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://edongne.com'
 
 const CATEGORY_LABELS: Record<string, string> = {
   free: '자유', qna: '질문답변', info: '정보', buysell: '사고팔고',

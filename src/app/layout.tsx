@@ -6,7 +6,7 @@ import Footer from '@/components/layout/Footer'
 import GoogleAnalytics from '@/components/GoogleAnalytics'
 import PageTracker from '@/components/PageTracker'
 
-const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://edongne.vercel.app'
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://edongne.com'
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
@@ -38,6 +38,9 @@ export const metadata: Metadata = {
       'max-image-preview': 'large',
       'max-snippet': -1,
     },
+  },
+  verification: {
+    google: 'bl855H3ZsiePJK5oISjc_6VvkiVQ9RM3GlMUjZUSAfM',
   },
   alternates: {
     canonical: SITE_URL,
