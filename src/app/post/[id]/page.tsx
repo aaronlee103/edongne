@@ -1,245 +1,132 @@
-'use client'
+import { Metadata } from 'next'
+import { createServerSupabase } from '@/lib/supabase-server'
+import PostContent from './PostContent'
 
-import Link from 'next/link'
-import { useState, useEffect } from 'react'
-import { useParams, useRouter } from 'next/navigation'
-import { createClient } from '@/lib/supabase-client'
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://edongne.vercel.app'
 
-const CATEGORIES: Record<string, string> = {
+const CATEGORY_LABELS: Record<string, string> = {
   free: '자유', qna: '질문답변', info: '정보', buysell: '사고팔고',
-  jobs: '구인구직', housing: '렌트/룸메', topic: '토픽', editor: '에디터',
+  jobs: '구인구직', housing: '렌트/룸메', topic: '토픽', editor: '에디터 픽',
+  neighborhood: '이동네어때', realestate: '부동산', legal: '부동산 법률',
+  living: '생활정보', construction: '건축/인테리어', finance: '주택융자',
 }
 
-function escapeHtml(text: string): string {
+function stripMarkdown(text: string): string {
   return text
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#039;')
+    .replace(/!\[[^\]]*\]\([^)]+\)/g, '')
+    .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1')
+    .replace(/^#{1,3}\s+/gm, '')
+    .replace(/\*\*(.+?)\*\*/g, '$1')
+    .replace(/\*(.+?)\*/g, '$1')
+    .replace(/\n{2,}/g, ' ')
+    .trim()
 }
 
-function sanitizeUrl(url: string): string {
-  const trimmed = url.trim()
-  if (/^https?:\/\//i.test(trimmed)) return trimmed
-  if (trimmed.startsWith('/')) return trimmed
-  return '#'
+function extractFirstImage(content: string): string | null {
+  const match = content.match(/!\[[^\]]*\]\(([^)]+)\)/)
+  return match ? match[1] : null
 }
 
-function renderMarkdown(text: string): string {
-  // 1) 마크다운 이미지/링크를 임시 토큰으로 보존
-  const tokens: string[] = []
-  let processed = text
-    .replace(/!\[([^\]]*)\]\(([^)]+)\)/g, (_m, alt, url) => {
-      const safeUrl = sanitizeUrl(url)
-      const safeAlt = escapeHtml(alt)
-      tokens.push(`<img src="${safeUrl}" alt="${safeAlt}" class="rounded-lg my-4 max-w-full" />`)
-      return `%%TOKEN_${tokens.length - 1}%%`
-    })
-    .replace(/\[([^\]]+)\]\(([^)]+)\)/g, (_m, label, url) => {
-      const safeUrl = sanitizeUrl(url)
-      const safeLabel = escapeHtml(label)
-      tokens.push(`<a href="${safeUrl}" class="text-blue-600 underline" target="_blank" rel="noopener noreferrer">${safeLabel}</a>`)
-      return `%%TOKEN_${tokens.length - 1}%%`
-    })
+export async function generateMetadata(
+  { params }: { params: { id: string } }
+): Promise<Metadata> {
+  const supabase = createServerSupabase()
+  const { data: post } = await supabase
+    .from('posts')
+    .select('title, content, thumbnail, category, created_at, type')
+    .eq('id', params.id)
+    .single()
 
-  // 2) 나머지 텍스트 HTML 이스케이프
-  processed = escapeHtml(processed)
+  if (!post) {
+    return { title: '게시글을 찾을 수 없습니다' }
+  }
 
-  // 3) 마크다운 서식 변환
-  let html = processed
-    .replace(/^### (.+)$/gm, '<h3 class="text-lg font-bold mt-6 mb-2">$1</h3>')
-    .replace(/^## (.+)$/gm, '<h2 class="text-xl font-bold mt-8 mb-3">$1</h2>')
-    .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
-    .replace(/\*(.+?)\*/g, '<em>$1</em>')
-    .replace(/\n\n/g, '</p><p class="mb-4">')
-    .replace(/\n/g, '<br />')
+  const plainContent = stripMarkdown(post.content || '')
+  const description = plainContent.substring(0, 160)
+  const ogImage = post.thumbnail || extractFirstImage(post.content || '') || null
+  const categoryLabel = CATEGORY_LABELS[post.category] || post.category
+  const pageUrl = `${SITE_URL}/post/${params.id}`
 
-  // 4) 토큰을 안전한 HTML로 복원
-  html = html.replace(/%%TOKEN_(\d+)%%/g, (_m, i) => tokens[Number(i)])
-
-  return '<p class="mb-4">' + html + '</p>'
+  return {
+    title: post.title,
+    description,
+    openGraph: {
+      title: post.title,
+      description,
+      url: pageUrl,
+      type: 'article',
+      publishedTime: post.created_at,
+      section: categoryLabel,
+      siteName: '이동네',
+      locale: 'ko_KR',
+      ...(ogImage && { images: [{ url: ogImage, width: 1200, height: 630, alt: post.title }] }),
+    },
+    twitter: {
+      card: ogImage ? 'summary_large_image' : 'summary',
+      title: post.title,
+      description,
+      ...(ogImage && { images: [ogImage] }),
+    },
+    alternates: {
+      canonical: pageUrl,
+    },
+  }
 }
 
-export default function PostDetailPage() {
-  const params = useParams()
-  const router = useRouter()
-  const postId = params.id as string
-  const supabase = createClient()
-  const [post, setPost] = useState<any>(null)
-  const [comments, setComments] = useState<any[]>([])
-  const [commentText, setCommentText] = useState('')
-  const [user, setUser] = useState<any>(null)
-  const [role, setRole] = useState<string>('user')
-  const [loading, setLoading] = useState(true)
+export default async function PostPage({ params }: { params: { id: string } }) {
+  const supabase = createServerSupabase()
+  const { data: post } = await supabase
+    .from('posts')
+    .select('title, content, thumbnail, category, created_at, type, users(nickname)')
+    .eq('id', params.id)
+    .single()
 
-  useEffect(() => {
-    supabase.auth.getUser().then(({ data }) => {
-      setUser(data.user)
-      if (data.user) {
-        supabase.from('users').select('role').eq('id', data.user.id).single()
-          .then(({ data: u }) => { if (u?.role) setRole(u.role) })
-      }
-    })
-    fetchPost()
-    fetchComments()
-  }, [postId])
-
-  const canEdit = user && post && (user.id === post.user_id || role === 'super' || role === 'editor')
-
-  async function handleDelete() {
-    if (!confirm('이 게시글을 삭제하시겠습니까?')) return
-    const { error } = await supabase.from('posts').delete().eq('id', postId)
-    if (error) {
-      alert('삭제 실패: ' + error.message)
-    } else {
-      router.push('/board')
-    }
-  }
-
-  async function fetchPost() {
-    const { data } = await supabase
-      .from('posts')
-      .select('*, votes(value)')
-      .eq('id', postId)
-      .single()
-    if (data) {
-      setPost({
-        ...data,
-        vote_score: data.votes?.reduce((sum: number, v: any) => sum + v.value, 0) || 0,
-      })
-      // 조회수 증가
-      await supabase.from('posts').update({ views: (data.views || 0) + 1 }).eq('id', postId)
-    }
-    setLoading(false)
-  }
-
-  async function fetchComments() {
-    const { data } = await supabase
-      .from('comments')
-      .select('*')
-      .eq('post_id', postId)
-      .order('created_at', { ascending: true })
-    if (data) setComments(data)
-  }
-
-  async function handleComment(e: React.FormEvent) {
-    e.preventDefault()
-    if (!user) return alert('로그인이 필요합니다.')
-    if (!commentText.trim()) return
-
-    const { error } = await supabase.from('comments').insert({
-      post_id: postId,
-      user_id: user.id,
-      content: commentText.trim(),
-    })
-
-    if (error) {
-      alert('댓글 작성 실패: ' + error.message)
-      return
-    }
-
-    setCommentText('')
-    fetchComments()
-  }
-
-  function timeAgo(date: string) {
-    const seconds = Math.floor((Date.now() - new Date(date).getTime()) / 1000)
-    if (seconds < 60) return '방금'
-    if (seconds < 3600) return `${Math.floor(seconds / 60)}분 전`
-    if (seconds < 86400) return `${Math.floor(seconds / 3600)}시간 전`
-    return `${Math.floor(seconds / 86400)}일 전`
-  }
-
-  if (loading) return <div className="max-w-3xl mx-auto px-4 py-16 text-center text-muted text-sm">불러오는 중...</div>
-  if (!post) return <div className="max-w-3xl mx-auto px-4 py-16 text-center text-muted text-sm">게시글을 찾을 수 없습니다.</div>
+  // JSON-LD 구조화 데이터 (구글 뉴스/리치 결과)
+  const jsonLd = post ? {
+    '@context': 'https://schema.org',
+    '@type': post.type === 'magazine' ? 'NewsArticle' : 'Article',
+    headline: post.title,
+    description: stripMarkdown(post.content || '').substring(0, 160),
+    datePublished: post.created_at,
+    dateModified: post.created_at,
+    author: {
+      '@type': 'Person',
+      name: (post.users as any)?.nickname || '이동네',
+    },
+    publisher: {
+      '@type': 'Organization',
+      name: '이동네',
+      url: SITE_URL,
+    },
+    mainEntityOfPage: {
+      '@type': 'WebPage',
+      '@id': `${SITE_URL}/post/${params.id}`,
+    },
+    ...(post.thumbnail && {
+      image: {
+        '@type': 'ImageObject',
+        url: post.thumbnail,
+      },
+    }),
+    ...(!post.thumbnail && post.content && extractFirstImage(post.content) && {
+      image: {
+        '@type': 'ImageObject',
+        url: extractFirstImage(post.content),
+      },
+    }),
+    inLanguage: 'ko',
+    isAccessibleForFree: true,
+  } : null
 
   return (
-    <div className="max-w-3xl mx-auto px-4 py-8">
-
-      {/* 게시글 */}
-      <article className="mb-8">
-        <div className="flex items-center gap-2 mb-3">
-          <span className="text-xs px-2 py-0.5 bg-gray-100 rounded">{CATEGORIES[post.category] || post.category}</span>
-        </div>
-        <h1 className="text-2xl font-bold mb-4">{post.title}</h1>
-        <div className="flex items-center justify-between mb-6">
-          <div className="flex items-center gap-3 text-sm text-muted">
-            <span>{new Date(post.created_at).toLocaleDateString('ko-KR')}</span>
-            <span>조회 {post.views || 0}</span>
-          </div>
-          {canEdit && (
-            <div className="flex items-center gap-2">
-              <Link
-                href={`/post/${postId}/edit`}
-                className="text-xs px-3 py-1 border border-border rounded hover:bg-gray-50 transition-colors"
-              >
-                수정
-              </Link>
-              <button
-                onClick={handleDelete}
-                className="text-xs px-3 py-1 border border-red-200 text-red-500 rounded hover:bg-red-50 transition-colors"
-              >
-                삭제
-              </button>
-            </div>
-          )}
-        </div>
-        {post.type === 'magazine' || post.type === 'notice' ? (
-          <div
-            className="prose prose-sm max-w-none text-sm leading-relaxed"
-            dangerouslySetInnerHTML={{ __html: renderMarkdown(post.content) }}
-          />
-        ) : (
-          <div className="prose prose-sm max-w-none whitespace-pre-wrap text-sm leading-relaxed">
-            {post.content}
-          </div>
-        )}
-
-        <div className="flex items-center gap-4 mt-6 pt-6 border-t border-border">
-          <span className="font-bold">▲ {post.vote_score}</span>
-        </div>
-      </article>
-
-      {/* 댓글 */}
-      <section>
-        <h2 className="font-bold mb-4">댓글 {comments.length}개</h2>
-
-        <form onSubmit={handleComment} className="mb-6">
-          <textarea
-            value={commentText}
-            onChange={(e) => setCommentText(e.target.value)}
-            placeholder={user ? '댓글을 남겨보세요' : '로그인 후 댓글을 작성할 수 있습니다'}
-            maxLength={2000}
-            className="w-full border border-border rounded-lg p-3 text-sm resize-none focus:outline-none focus:border-black transition-colors"
-            rows={3}
-            disabled={!user}
-          />
-          <div className="flex justify-end mt-2">
-            <button
-              type="submit"
-              disabled={!user || !commentText.trim()}
-              className="text-sm bg-black text-white px-4 py-1.5 rounded-full hover:bg-gray-800 transition-colors disabled:opacity-50"
-            >
-              댓글 작성
-            </button>
-          </div>
-        </form>
-
-        <div className="space-y-4">
-          {comments.map((comment) => (
-            <div key={comment.id} className="py-4 border-b border-border">
-              <div className="flex items-center gap-2 mb-2">
-                <span className="text-xs text-muted">{timeAgo(comment.created_at)}</span>
-              </div>
-              <p className="text-sm leading-relaxed">{comment.content}</p>
-            </div>
-          ))}
-          {comments.length === 0 && (
-            <p className="text-sm text-muted text-center py-4">아직 댓글이 없습니다. 첫 댓글을 남겨보세요!</p>
-          )}
-        </div>
-      </section>
-    </div>
+    <>
+      {jsonLd && (
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+        />
+      )}
+      <PostContent />
+    </>
   )
 }
