@@ -15,8 +15,15 @@ const COMMUNITY_CATEGORIES = [
 ]
 
 const MAGAZINE_CATEGORIES = [
-  '에디터 추천', '부동산 가이드', '생활 정보',
-  '법률/비자', '건축/인테리어', '맛집/문화', '뉴스',
+  { key: 'editor', label: '에디터 추천' },
+  { key: 'neighborhood', label: '이동네어때' },
+  { key: 'realestate', label: '부동산 가이드' },
+  { key: 'living', label: '생활 정보' },
+  { key: 'legal', label: '법률/비자' },
+  { key: 'construction', label: '건축/인테리어' },
+  { key: 'finance', label: '주택융자' },
+  { key: 'topic', label: '맛집/문화' },
+  { key: 'info', label: '뉴스' },
 ]
 
 export default function EditPostPage() {
@@ -162,12 +169,12 @@ export default function EditPostPage() {
             <div className="flex flex-wrap gap-2">
               {MAGAZINE_CATEGORIES.map(cat => (
                 <button
-                  key={cat}
+                  key={cat.key}
                   type="button"
-                  onClick={() => setCategory(cat)}
-                  className={`px-3 py-1 text-xs rounded-full ${category === cat ? 'bg-black text-white' : 'bg-gray-100 text-secondary hover:bg-gray-200'}`}
+                  onClick={() => setCategory(cat.key)}
+                  className={`px-3 py-1 text-xs rounded-full ${category === cat.key ? 'bg-black text-white' : 'bg-gray-100 text-secondary hover:bg-gray-200'}`}
                 >
-                  {cat}
+                  {cat.label}
                 </button>
               ))}
             </div>
