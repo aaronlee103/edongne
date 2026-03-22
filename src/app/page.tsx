@@ -1,7 +1,7 @@
 'use client'
 
 import Link from 'next/link'
-import { useState, useEffect, Suspense } from 'react'
+import { useState, useEffect, useRef, useCallback, Suspense } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase-client'
 
@@ -37,6 +37,24 @@ function HomeContent() {
   const [businessCounts, setBusinessCounts] = useState({ realtor: 0, builder: 0, lawyer: 0, mortgage: 0 })
   const [currentPage, setCurrentPage] = useState(1)
   const [searchTerm, setSearchTerm] = useState('')
+  const [currentSlide, setCurrentSlide] = useState(0)
+  const [isPaused, setIsPaused] = useState(false)
+  const slideInterval = useRef<NodeJS.Timeout | null>(null)
+
+  // 에디터 픽 자동 슬라이드
+  const startSlideTimer = useCallback(() => {
+    if (slideInterval.current) clearInterval(slideInterval.current)
+    slideInterval.current = setInterval(() => {
+      setCurrentSlide(prev => (editorPicks.length > 0 ? (prev + 1) % editorPicks.length : 0))
+    }, 4000)
+  }, [editorPicks.length])
+
+  useEffect(() => {
+    if (!isPaused && editorPicks.length > 1) {
+      startSlideTimer()
+    }
+    return () => { if (slideInterval.current) clearInterval(slideInterval.current) }
+  }, [isPaused, editorPicks.length, startSlideTimer])
 
   // URL 쿼리 파라미터에서 카테고리 및 검색어 읽기
   useEffect(() => {
@@ -75,7 +93,7 @@ function HomeContent() {
       .eq('category', 'editor')
       .or('published.is.null,published.eq.true')
       .order('created_at', { ascending: false })
-      .limit(3)
+      .limit(5)
     if (data) setEditorPicks(data)
   }
 
@@ -148,9 +166,6 @@ function HomeContent() {
     return `${Math.floor(seconds / 86400)}일`
   }
 
-  // 에디터 픽은 항상 히어로 영역에 표시
-  const heroPosts = editorPicks.slice(0, 1)
-  const featuredPosts = editorPicks.slice(1, 3)
   // 에디터 픽 ID를 제외한 나머지 글을 그리드에 표시
   const editorPickIds = new Set(editorPicks.map(p => p.id))
   const gridPosts = allPosts.filter(p => !editorPickIds.has(p.id))
@@ -195,59 +210,58 @@ function HomeContent() {
         <div className="max-w-6xl mx-auto px-4">
           {/* 메인 레이아웃: 피처드 + 인기 */}
           <div className="grid md:grid-cols-3 gap-6 py-6">
-            {/* 왼쪽: 오늘의 토픽 (대형 카드) */}
+            {/* 왼쪽: 에디터 픽 슬라이드 */}
             <div className="md:col-span-2">
-              {heroPosts[0] ? (
-                <Link href={`/post/${heroPosts[0].id}`} className="block group">
-                  <div className="relative rounded-xl overflow-hidden bg-gray-900 aspect-[16/9]">
-                    {heroPosts[0].thumbnail ? (
-                      <img src={heroPosts[0].thumbnail} alt="" className="w-full h-full object-cover opacity-70 group-hover:opacity-60 transition-opacity" />
-                    ) : (
-                      <div className="w-full h-full bg-gradient-to-br from-gray-800 to-gray-900" />
-                    )}
-                    <div className="absolute inset-0 flex flex-col justify-end p-6">
-                      <span className="inline-block bg-white text-black text-xs font-bold px-2 py-1 rounded mb-3 w-fit">에디터 픽</span>
-                      <h2 className="text-white text-xl md:text-2xl font-bold leading-tight mb-2">{heroPosts[0].title}</h2>
-                      <p className="text-gray-300 text-sm line-clamp-2">{stripMarkdown(heroPosts[0].content || '').substring(0, 120)}</p>
-                      {heroPosts[0].users?.nickname && (
-                        <p className="text-gray-400 text-xs mt-2">by {heroPosts[0].users.nickname}</p>
+              {editorPicks.length > 0 ? (
+                <div className="relative rounded-xl overflow-hidden bg-gray-900 aspect-[16/9]">
+                  {/* 슬라이드 컨테이너 */}
+                  {editorPicks.map((post, idx) => (
+                    <Link
+                      key={post.id}
+                      href={`/post/${post.id}`}
+                      className={`absolute inset-0 transition-opacity duration-700 ${idx === currentSlide ? 'opacity-100 z-10' : 'opacity-0 z-0'}`}
+                    >
+                      {post.thumbnail ? (
+                        <img src={post.thumbnail} alt="" className="w-full h-full object-cover opacity-70 hover:opacity-60 transition-opacity" />
+                      ) : (
+                        <div className="w-full h-full bg-gradient-to-br from-gray-800 to-gray-900" />
                       )}
+                      <div className="absolute inset-0 flex flex-col justify-end p-6">
+                        <span className="inline-block bg-white text-black text-xs font-bold px-2 py-1 rounded mb-3 w-fit">에디터 픽</span>
+                        <h2 className="text-white text-xl md:text-2xl font-bold leading-tight mb-2">{post.title}</h2>
+                        <p className="text-gray-300 text-sm line-clamp-2">{stripMarkdown(post.content || '').substring(0, 120)}</p>
+                        {post.users?.nickname && (
+                          <p className="text-gray-400 text-xs mt-2">by {post.users.nickname}</p>
+                        )}
+                      </div>
+                    </Link>
+                  ))}
+
+                  {/* 컨트롤: 일시정지/재생 + 슬라이드 번호 */}
+                  {editorPicks.length > 1 && (
+                    <div className="absolute bottom-4 right-4 z-20 flex items-center gap-0 bg-black/60 rounded-full overflow-hidden">
+                      <button
+                        onClick={(e) => { e.preventDefault(); setIsPaused(!isPaused) }}
+                        className="flex items-center justify-center w-10 h-10 text-white hover:bg-white/10 transition-colors"
+                      >
+                        {isPaused ? (
+                          <svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor"><polygon points="2,0 14,7 2,14" /></svg>
+                        ) : (
+                          <svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor"><rect x="1" y="0" width="4" height="14" /><rect x="9" y="0" width="4" height="14" /></svg>
+                        )}
+                      </button>
+                      <span className="text-white text-sm font-medium pr-4 tabular-nums">
+                        {currentSlide + 1} / {editorPicks.length}
+                      </span>
                     </div>
-                  </div>
-                </Link>
+                  )}
+                </div>
               ) : (
                 <div className="rounded-xl bg-bg-light border border-dashed border-border aspect-[16/9] flex items-center justify-center">
                   <div className="text-center">
                     <p className="text-muted text-sm mb-2">아직 매거진 글이 없습니다</p>
                     <Link href="/admin/magazine" className="text-xs text-primary hover:underline">관리자에서 작성하기</Link>
                   </div>
-                </div>
-              )}
-
-              {/* 아래 작은 카드 2개 */}
-              {featuredPosts.length > 0 && (
-                <div className="grid grid-cols-2 gap-4 mt-4">
-                  {featuredPosts.map((post) => (
-                    <Link key={post.id} href={`/post/${post.id}`} className="group block">
-                      <div className="rounded-lg overflow-hidden border border-border hover:shadow-md transition-shadow">
-                        {post.thumbnail ? (
-                          <img src={post.thumbnail} alt="" className="w-full h-28 object-cover" />
-                        ) : (
-                          <div className="w-full h-28 bg-gradient-to-br from-gray-100 to-gray-200" />
-                        )}
-                        <div className="p-3">
-                          <h3 className="text-sm font-bold line-clamp-2 group-hover:text-secondary transition-colors">{post.title}</h3>
-                          <div className="flex items-center gap-2 mt-2 text-xs text-muted">
-                            {post.users?.nickname && <span>{post.users.nickname}</span>}
-                            {post.users?.nickname && <span>·</span>}
-                            <span>{post.category}</span>
-                            <span>·</span>
-                            <span>{timeAgo(post.created_at)}</span>
-                          </div>
-                        </div>
-                      </div>
-                    </Link>
-                  ))}
                 </div>
               )}
             </div>
