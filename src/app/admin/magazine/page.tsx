@@ -59,13 +59,22 @@ export default function AdminMagazinePage() {
       </div>
 
       <div className="flex gap-2 mb-4 flex-wrap">
-        {['all', ...MAGAZINE_CATEGORIES].map(cat => (
+        {[
+          { key: 'all', label: '전체' },
+          { key: 'editor', label: '에디터 픽' },
+          { key: 'neighborhood', label: '이동네어때' },
+          { key: 'realestate', label: '부동산' },
+          { key: 'legal', label: '부동산 법률' },
+          { key: 'living', label: '생활정보' },
+          { key: 'construction', label: '건축/인테리어' },
+          { key: 'finance', label: '주택융자' },
+        ].map(cat => (
           <button
-            key={cat}
-            onClick={() => setFilterCat(cat)}
-            className={`px-3 py-1 text-xs rounded-full ${filterCat === cat ? 'bg-black text-white' : 'bg-gray-100 text-secondary hover:bg-gray-200'}`}
+            key={cat.key}
+            onClick={() => setFilterCat(cat.key)}
+            className={`px-3 py-1 text-xs rounded-full ${filterCat === cat.key ? 'bg-black text-white' : 'bg-gray-100 text-secondary hover:bg-gray-200'}`}
           >
-            {cat === 'all' ? '전체' : cat}
+            {cat.label}
           </button>
         ))}
       </div>

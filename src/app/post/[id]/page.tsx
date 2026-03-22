@@ -125,9 +125,6 @@ export default function PostDetailPage() {
 
   return (
     <div className="max-w-3xl mx-auto px-4 py-8">
-      <Link href="/board" className="text-sm text-muted hover:text-primary mb-6 inline-block">
-        ← 커뮤니티로 돌아가기
-      </Link>
 
       {/* 게시글 */}
       <article className="mb-8">
