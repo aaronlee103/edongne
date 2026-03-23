@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase-client'
 import { uploadImage } from '@/lib/upload'
+import AdBanner from '@/components/AdBanner'
 
 const PLAN_LABEL: Record<string, string> = { premium: 'PREMIUM', pro: 'PRO' }
 const PLAN_COLOR: Record<string, string> = {
@@ -28,6 +29,7 @@ export default function BusinessDetailPage({ params }: { params: { id: string } 
   const [text, setText] = useState('')
   const [submitting, setSubmitting] = useState(false)
   const [lightbox, setLightbox] = useState<number | null>(null)
+  const [authorPosts, setAuthorPosts] = useState<any[]>([])
   const [showEdit, setShowEdit] = useState(false)
 
   const isOwner = user && business && user.id === business.user_id
@@ -56,6 +58,17 @@ export default function BusinessDetailPage({ params }: { params: { id: string } 
       .order('created_at', { ascending: false })
 
     if (revs) setReviews(revs)
+    // Fetch posts by this business owner
+    if (biz?.user_id) {
+      const { data: posts } = await supabase
+        .from('posts')
+        .select('id, title, category, created_at, thumbnail, type')
+        .eq('user_id', biz.user_id)
+        .or('published.is.null,published.eq.true')
+        .order('created_at', { ascending: false })
+        .limit(10)
+      if (posts) setAuthorPosts(posts)
+    }
     setLoading(false)
   }
 
@@ -233,6 +246,31 @@ export default function BusinessDetailPage({ params }: { params: { id: string } 
           </div>
         </div>
       )}
+
+      {/* 작성한 글 */}
+      {authorPosts.length > 0 && (
+        <section className="mb-8">
+          <h2 className="font-bold text-lg mb-3">작성한 글</h2>
+          <div className="grid md:grid-cols-2 gap-3">
+            {authorPosts.map((ap) => (
+              <Link key={ap.id} href={`/post/${ap.id}`} className="flex gap-3 border border-border rounded-lg p-3 hover:shadow-md transition-all group">
+                {ap.thumbnail && (
+                  <img src={ap.thumbnail} alt="" className="w-20 h-16 object-cover rounded flex-shrink-0" />
+                )}
+                <div className="min-w-0 flex-1">
+                  <p className="text-sm font-medium line-clamp-2 group-hover:text-secondary">{ap.title}</p>
+                  <p className="text-xs text-muted mt-1">{new Date(ap.created_at).toLocaleDateString('ko-KR')}</p>
+                </div>
+              </Link>
+            ))}
+          </div>
+        </section>
+      )}
+
+      {/* 광고 배너 */}
+      <div className="mb-8">
+        <AdBanner variant="banner" />
+      </div>
 
       {/* 리뷰 섹션 */}
       <section>

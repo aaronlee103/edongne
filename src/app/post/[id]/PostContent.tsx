@@ -4,25 +4,17 @@ import Link from 'next/link'
 import { useState, useEffect } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase-client'
+import AdBanner from '@/components/AdBanner'
 
 const CATEGORIES: Record<string, string> = {
-  free: '자유',
-  qna: '질문답변',
-  info: '정보',
-  buysell: '사고팔고',
-  jobs: '구인구직',
-  housing: '렌트/룸메',
-  topic: '토픽',
-  editor: '에디터',
+  free: '자유', qna: '질문답변', info: '정보', buysell: '사고팔고',
+  jobs: '구인구직', housing: '렌트/룸메', topic: '토픽', editor: '에디터',
+  realestate: '부동산', legal: '부동산 법률', living: '생활정보',
+  construction: '건축/인테리어', finance: '주택융자', neighborhood: '이동네어때',
 }
 
 function escapeHtml(text: string): string {
-  return text
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#039;')
+  return text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#039;')
 }
 
 function sanitizeUrl(url: string): string {
@@ -33,9 +25,7 @@ function sanitizeUrl(url: string): string {
 }
 
 function renderInline(text: string): string {
-  return escapeHtml(text)
-    .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
-    .replace(/\*(.+?)\*/g, '<em>$1</em>')
+  return escapeHtml(text).replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>').replace(/\*(.+?)\*/g, '<em>$1</em>')
 }
 
 function renderMarkdownTable(block: string): string {
@@ -64,35 +54,20 @@ function renderMarkdown(text: string): string {
   const tokens: string[] = []
   let processed = text.replace(
     /((?:^|\n)\|.+\|[ \t]*\n\|[\s:|-]+\|[ \t]*\n(?:\|.+\|[ \t]*\n?)+)/g,
-    (_m, tableBlock) => {
-      tokens.push(renderMarkdownTable(tableBlock))
-      return `\n%%TOKEN_${tokens.length - 1}%%\n`
-    }
+    (_m, tableBlock) => { tokens.push(renderMarkdownTable(tableBlock)); return `\n%%TOKEN_${tokens.length - 1}%%\n` }
   )
   processed = processed
     .replace(/!\[([^\]]*)\]\(([^)]+)\)/g, (_m, alt, url) => {
-      const safeUrl = sanitizeUrl(url)
-      const safeAlt = escapeHtml(alt)
-      tokens.push(`<img src="${safeUrl}" alt="${safeAlt}" class="rounded-lg my-4 max-w-full" />`)
-      return `%%TOKEN_${tokens.length - 1}%%`
+      tokens.push(`<img src="${sanitizeUrl(url)}" alt="${escapeHtml(alt)}" class="rounded-lg my-4 max-w-full" />`); return `%%TOKEN_${tokens.length - 1}%%`
     })
     .replace(/\[([^\]]+)\]\(([^)]+)\)/g, (_m, label, url) => {
-      const safeUrl = sanitizeUrl(url)
-      const safeLabel = escapeHtml(label)
-      tokens.push(`<a href="${safeUrl}" class="text-blue-600 underline" target="_blank" rel="noopener noreferrer">${safeLabel}</a>`)
-      return `%%TOKEN_${tokens.length - 1}%%`
+      tokens.push(`<a href="${sanitizeUrl(url)}" class="text-blue-600 underline" target="_blank" rel="noopener noreferrer">${escapeHtml(label)}</a>`); return `%%TOKEN_${tokens.length - 1}%%`
     })
   processed = escapeHtml(processed)
-  processed = processed.replace(
-    /((?:^|\n)(?:- .+\n?)+)/g,
-    (_m, listBlock) => {
-      const items = listBlock.trim().split('\n')
-        .filter((l: string) => l.trim().startsWith('- '))
-        .map((l: string) => `<li class="ml-4 mb-1">${l.trim().substring(2)}</li>`)
-        .join('')
-      return `<ul class="list-disc pl-4 my-3">${items}</ul>`
-    }
-  )
+  processed = processed.replace(/((?:^|\n)(?:- .+\n?)+)/g, (_m, listBlock) => {
+    const items = listBlock.trim().split('\n').filter((l: string) => l.trim().startsWith('- ')).map((l: string) => `<li class="ml-4 mb-1">${l.trim().substring(2)}</li>`).join('')
+    return `<ul class="list-disc pl-4 my-3">${items}</ul>`
+  })
   let html = processed
     .replace(/^---$/gm, '<hr class="my-6 border-t border-gray-300" />')
     .replace(/^#### (.+)$/gm, '<h4 class="text-base font-bold mt-5 mb-2">$1</h4>')
@@ -104,6 +79,16 @@ function renderMarkdown(text: string): string {
     .replace(/\n/g, '<br />')
   html = html.replace(/%%TOKEN_(\d+)%%/g, (_m, i) => tokens[Number(i)])
   return '<p class="mb-4">' + html + '</p>'
+}
+
+function insertInlineAd(htmlContent: string): string {
+  const parts = htmlContent.split('</p>')
+  if (parts.length > 6) {
+    const adHtml = '<div class="my-8 border border-border rounded-lg p-5 bg-gray-50 text-center"><p class="text-xs text-muted mb-1">AD</p><p class="text-sm font-bold mb-1">뉴욕·뉴저지 한인에게 업체를 알리세요</p><p class="text-xs text-muted mb-3">이동네 매거진 광고 · 첫 광고 시 프리미엄 할인</p><a href="mailto:info@edongne.com" class="text-xs bg-black text-white px-4 py-1.5 rounded-full hover:bg-gray-800 transition-colors inline-block">광고 문의 →</a></div>'
+    const midPoint = Math.floor(parts.length / 2)
+    parts.splice(midPoint, 0, adHtml)
+  }
+  return parts.join('</p>')
 }
 
 export default function PostContent() {
@@ -118,19 +103,16 @@ export default function PostContent() {
   const [user, setUser] = useState<any>(null)
   const [role, setRole] = useState<string>('user')
   const [loading, setLoading] = useState(true)
-
-  // Like state
   const [liked, setLiked] = useState(false)
   const [likeCount, setLikeCount] = useState(0)
   const [likeLoading, setLikeLoading] = useState(false)
+  const [relatedPosts, setRelatedPosts] = useState<any[]>([])
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => {
       setUser(data.user)
       if (data.user) {
-        supabase.from('users').select('role').eq('id', data.user.id).single()
-          .then(({ data: u }) => { if (u?.role) setRole(u.role) })
-        // Check if user already liked this post
+        supabase.from('users').select('role').eq('id', data.user.id).single().then(({ data: u }) => { if (u?.role) setRole(u.role) })
         checkUserLike(data.user.id)
       }
     })
@@ -140,22 +122,12 @@ export default function PostContent() {
   }, [postId])
 
   async function checkUserLike(userId: string) {
-    const { data } = await supabase
-      .from('votes')
-      .select('id')
-      .eq('post_id', postId)
-      .eq('user_id', userId)
-      .eq('value', 1)
-      .limit(1)
+    const { data } = await supabase.from('votes').select('id').eq('post_id', postId).eq('user_id', userId).eq('value', 1).limit(1)
     setLiked(!!data && data.length > 0)
   }
 
   async function fetchLikeCount() {
-    const { data } = await supabase
-      .from('votes')
-      .select('id')
-      .eq('post_id', postId)
-      .eq('value', 1)
+    const { data } = await supabase.from('votes').select('id').eq('post_id', postId).eq('value', 1)
     setLikeCount(data?.length || 0)
   }
 
@@ -163,22 +135,12 @@ export default function PostContent() {
     if (!user) return alert('로그인이 필요합니다.')
     if (likeLoading) return
     setLikeLoading(true)
-
     if (liked) {
-      // Unlike: remove the vote
-      await supabase
-        .from('votes')
-        .delete()
-        .eq('post_id', postId)
-        .eq('user_id', user.id)
-        .eq('value', 1)
+      await supabase.from('votes').delete().eq('post_id', postId).eq('user_id', user.id).eq('value', 1)
       setLiked(false)
       setLikeCount(prev => Math.max(0, prev - 1))
     } else {
-      // Like: insert a vote
-      await supabase
-        .from('votes')
-        .insert({ post_id: postId, user_id: user.id, value: 1 })
+      await supabase.from('votes').insert({ post_id: postId, user_id: user.id, value: 1 })
       setLiked(true)
       setLikeCount(prev => prev + 1)
     }
@@ -190,35 +152,24 @@ export default function PostContent() {
   async function handleDelete() {
     if (!confirm('이 게시글을 삭제하시겠습니까?')) return
     const { error } = await supabase.from('posts').delete().eq('id', postId)
-    if (error) {
-      alert('삭제 실패: ' + error.message)
-    } else {
-      router.push('/board')
-    }
+    if (error) alert('삭제 실패: ' + error.message)
+    else router.push('/board')
   }
 
   async function fetchPost() {
-    const { data } = await supabase
-      .from('posts')
-      .select('*, users(nickname, avatar_animal), votes(value)')
-      .eq('id', postId)
-      .single()
+    const { data } = await supabase.from('posts').select('*, users(nickname, avatar_animal), votes(value)').eq('id', postId).single()
     if (data) {
-      setPost({
-        ...data,
-        vote_score: data.votes?.reduce((sum: number, v: any) => sum + v.value, 0) || 0,
-      })
+      setPost({ ...data, vote_score: data.votes?.reduce((sum: number, v: any) => sum + v.value, 0) || 0 })
       await supabase.from('posts').update({ views: (data.views || 0) + 1 }).eq('id', postId)
+      // Fetch related posts by same category
+      const { data: related } = await supabase.from('posts').select('id, title, thumbnail, created_at').eq('category', data.category).neq('id', postId).or('published.is.null,published.eq.true').order('created_at', { ascending: false }).limit(4)
+      if (related) setRelatedPosts(related)
     }
     setLoading(false)
   }
 
   async function fetchComments() {
-    const { data } = await supabase
-      .from('comments')
-      .select('*, users(nickname, avatar_animal)')
-      .eq('post_id', postId)
-      .order('created_at', { ascending: true })
+    const { data } = await supabase.from('comments').select('*, users(nickname, avatar_animal)').eq('post_id', postId).order('created_at', { ascending: true })
     if (data) setComments(data)
   }
 
@@ -226,15 +177,8 @@ export default function PostContent() {
     e.preventDefault()
     if (!user) return alert('로그인이 필요합니다.')
     if (!commentText.trim()) return
-    const { error } = await supabase.from('comments').insert({
-      post_id: postId,
-      user_id: user.id,
-      content: commentText.trim(),
-    })
-    if (error) {
-      alert('댓글 작성 실패: ' + error.message)
-      return
-    }
+    const { error } = await supabase.from('comments').insert({ post_id: postId, user_id: user.id, content: commentText.trim() })
+    if (error) { alert('댓글 작성 실패: ' + error.message); return }
     setCommentText('')
     fetchComments()
   }
@@ -247,112 +191,106 @@ export default function PostContent() {
     return `${Math.floor(seconds / 86400)}일 전`
   }
 
-  const AVATAR_EMOJI: Record<string, string> = {
-    bear: '🐻', rabbit: '🐰', fox: '🦊', cat: '🐱',
-    dog: '🐶', owl: '🦉', penguin: '🐧', deer: '🦌',
-  }
+  const AVATAR_EMOJI: Record<string, string> = { bear: '🐻', rabbit: '🐰', fox: '🦊', cat: '🐱', dog: '🐶', owl: '🦉', penguin: '🐧', deer: '🦌' }
 
-  if (loading) return <div className="max-w-3xl mx-auto px-4 py-16 text-center text-muted text-sm">불러오는 중...</div>
-  if (!post) return <div className="max-w-3xl mx-auto px-4 py-16 text-center text-muted text-sm">게시글을 찾을 수 없습니다.</div>
+  if (loading) return <div className="max-w-5xl mx-auto px-4 py-16 text-center text-muted text-sm">불러오는 중...</div>
+  if (!post) return <div className="max-w-5xl mx-auto px-4 py-16 text-center text-muted text-sm">게시글을 찾을 수 없습니다.</div>
 
   const authorNickname = post.users?.nickname || '익명'
   const authorAvatar = AVATAR_EMOJI[post.users?.avatar_animal] || '🐻'
+  const isMagazine = post.type === 'magazine' || post.type === 'notice'
 
   return (
-    <div className="max-w-3xl mx-auto px-4 py-8">
-      {/* 게시글 */}
-      <article className="mb-8">
-        <div className="flex items-center gap-2 mb-3">
-          <span className="text-xs px-2 py-0.5 bg-gray-100 rounded">{CATEGORIES[post.category] || post.category}</span>
-        </div>
-        <h1 className="text-2xl font-bold mb-4">{post.title}</h1>
-        <div className="flex items-center justify-between mb-6">
-          <div className="flex items-center gap-3 text-sm text-muted">
-            <span className="flex items-center gap-1">
-              <span>{authorAvatar}</span>
-              <span className="font-medium text-primary">{authorNickname}</span>
-            </span>
-            <span>{new Date(post.created_at).toLocaleDateString('ko-KR')}</span>
-            <span>조회 {post.views || 0}</span>
-          </div>
-          {canEdit && (
-            <div className="flex items-center gap-2">
-              <Link href={`/post/${postId}/edit`}
-                className="text-xs px-3 py-1 border border-border rounded hover:bg-gray-50 transition-colors">
-                수정
-              </Link>
-              <button onClick={handleDelete}
-                className="text-xs px-3 py-1 border border-red-200 text-red-500 rounded hover:bg-red-50 transition-colors">
-                삭제
+    <div className="max-w-5xl mx-auto px-4 py-8">
+      <div className={`${isMagazine ? 'grid md:grid-cols-[1fr_240px] gap-8' : ''}`}>
+        {/* Main Content */}
+        <div className="min-w-0">
+          <article className="mb-8">
+            <div className="flex items-center gap-2 mb-3">
+              <span className="text-xs px-2 py-0.5 bg-gray-100 rounded">{CATEGORIES[post.category] || post.category}</span>
+            </div>
+            <h1 className="text-2xl font-bold mb-4">{post.title}</h1>
+            <div className="flex items-center justify-between mb-6">
+              <div className="flex items-center gap-3 text-sm text-muted">
+                <span className="flex items-center gap-1">
+                  <span>{authorAvatar}</span>
+                  <span className="font-medium text-primary">{authorNickname}</span>
+                </span>
+                <span>{new Date(post.created_at).toLocaleDateString('ko-KR')}</span>
+                <span>조회 {post.views || 0}</span>
+              </div>
+              {canEdit && (
+                <div className="flex items-center gap-2">
+                  <Link href={`/post/${postId}/edit`} className="text-xs px-3 py-1 border border-border rounded hover:bg-gray-50 transition-colors">수정</Link>
+                  <button onClick={handleDelete} className="text-xs px-3 py-1 border border-red-200 text-red-500 rounded hover:bg-red-50 transition-colors">삭제</button>
+                </div>
+              )}
+            </div>
+
+            {isMagazine ? (
+              <div className="prose prose-sm max-w-none text-sm leading-relaxed" dangerouslySetInnerHTML={{ __html: insertInlineAd(renderMarkdown(post.content)) }} />
+            ) : (
+              <div className="prose prose-sm max-w-none whitespace-pre-wrap text-sm leading-relaxed">{post.content}</div>
+            )}
+
+            {/* 좋아요 버튼 */}
+            <div className="flex items-center gap-4 mt-6 pt-6 border-t border-border">
+              <button onClick={handleLike} disabled={likeLoading}
+                className={`flex items-center gap-2 px-4 py-2 rounded-full border transition-colors ${liked ? 'bg-red-50 border-red-200 text-red-500' : 'border-border text-muted hover:bg-gray-50'}`}>
+                <span className="text-lg">{liked ? '❤️' : '🤍'}</span>
+                <span className="text-sm font-medium">좋아요 {likeCount > 0 ? likeCount : ''}</span>
               </button>
             </div>
-          )}
-        </div>
+          </article>
 
-        {post.type === 'magazine' || post.type === 'notice' ? (
-          <div className="prose prose-sm max-w-none text-sm leading-relaxed"
-            dangerouslySetInnerHTML={{ __html: renderMarkdown(post.content) }} />
-        ) : (
-          <div className="prose prose-sm max-w-none whitespace-pre-wrap text-sm leading-relaxed">
-            {post.content}
-          </div>
-        )}
-
-        {/* 좋아요 버튼 */}
-        <div className="flex items-center gap-4 mt-6 pt-6 border-t border-border">
-          <button
-            onClick={handleLike}
-            disabled={likeLoading}
-            className={`flex items-center gap-2 px-4 py-2 rounded-full border transition-colors ${
-              liked
-                ? 'bg-red-50 border-red-200 text-red-500'
-                : 'border-border text-muted hover:bg-gray-50'
-            }`}
-          >
-            <span className="text-lg">{liked ? '❤️' : '🤍'}</span>
-            <span className="text-sm font-medium">좋아요 {likeCount > 0 ? likeCount : ''}</span>
-          </button>
-        </div>
-      </article>
-
-      {/* 댓글 */}
-      <section>
-        <h2 className="font-bold mb-4">댓글 {comments.length}개</h2>
-        <form onSubmit={handleComment} className="mb-6">
-          <textarea
-            value={commentText}
-            onChange={(e) => setCommentText(e.target.value)}
-            placeholder={user ? '댓글을 남겨보세요' : '로그인 후 댓글을 작성할 수 있습니다'}
-            maxLength={2000}
-            className="w-full border border-border rounded-lg p-3 text-sm resize-none focus:outline-none focus:border-black transition-colors"
-            rows={3}
-            disabled={!user}
-          />
-          <div className="flex justify-end mt-2">
-            <button type="submit" disabled={!user || !commentText.trim()}
-              className="text-sm bg-black text-white px-4 py-1.5 rounded-full hover:bg-gray-800 transition-colors disabled:opacity-50">
-              댓글 작성
-            </button>
-          </div>
-        </form>
-        <div className="space-y-4">
-          {comments.map((comment) => (
-            <div key={comment.id} className="py-4 border-b border-border">
-              <div className="flex items-center gap-2 mb-2">
-                <span className="text-sm">
-                  {AVATAR_EMOJI[comment.users?.avatar_animal] || '🐻'}
-                </span>
-                <span className="text-sm font-medium">{comment.users?.nickname || '익명'}</span>
-                <span className="text-xs text-muted">{timeAgo(comment.created_at)}</span>
+          {/* 댓글 */}
+          <section>
+            <h2 className="font-bold mb-4">댓글 {comments.length}개</h2>
+            <form onSubmit={handleComment} className="mb-6">
+              <textarea value={commentText} onChange={(e) => setCommentText(e.target.value)}
+                placeholder={user ? '댓글을 남겨보세요' : '로그인 후 댓글을 작성할 수 있습니다'} maxLength={2000}
+                className="w-full border border-border rounded-lg p-3 text-sm resize-none focus:outline-none focus:border-black transition-colors" rows={3} disabled={!user} />
+              <div className="flex justify-end mt-2">
+                <button type="submit" disabled={!user || !commentText.trim()} className="text-sm bg-black text-white px-4 py-1.5 rounded-full hover:bg-gray-800 transition-colors disabled:opacity-50">댓글 작성</button>
               </div>
-              <p className="text-sm leading-relaxed">{comment.content}</p>
+            </form>
+            <div className="space-y-4">
+              {comments.map((comment) => (
+                <div key={comment.id} className="py-4 border-b border-border">
+                  <div className="flex items-center gap-2 mb-2">
+                    <span className="text-sm">{AVATAR_EMOJI[comment.users?.avatar_animal] || '🐻'}</span>
+                    <span className="text-sm font-medium">{comment.users?.nickname || '익명'}</span>
+                    <span className="text-xs text-muted">{timeAgo(comment.created_at)}</span>
+                  </div>
+                  <p className="text-sm leading-relaxed">{comment.content}</p>
+                </div>
+              ))}
+              {comments.length === 0 && <p className="text-sm text-muted text-center py-4">아직 댓글이 없습니다. 첫 댓글을 남겨보세요!</p>}
             </div>
-          ))}
-          {comments.length === 0 && (
-            <p className="text-sm text-muted text-center py-4">아직 댓글이 없습니다. 첫 댓글을 남겨보세요!</p>
-          )}
+          </section>
         </div>
-      </section>
+
+        {/* Sidebar - magazine only */}
+        {isMagazine && (
+          <aside className="hidden md:block space-y-6">
+            <AdBanner variant="sidebar" />
+            {relatedPosts.length > 0 && (
+              <div>
+                <h3 className="font-bold text-sm mb-3">관련 글</h3>
+                <div className="space-y-3">
+                  {relatedPosts.map(rp => (
+                    <Link key={rp.id} href={`/post/${rp.id}`} className="block group">
+                      {rp.thumbnail && <img src={rp.thumbnail} alt="" className="w-full h-24 object-cover rounded-lg mb-1" />}
+                      <p className="text-xs font-medium line-clamp-2 group-hover:text-secondary">{rp.title}</p>
+                      <p className="text-xs text-muted mt-0.5">{timeAgo(rp.created_at)}</p>
+                    </Link>
+                  ))}
+                </div>
+              </div>
+            )}
+          </aside>
+        )}
+      </div>
     </div>
   )
 }
