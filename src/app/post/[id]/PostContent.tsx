@@ -84,7 +84,7 @@ function renderMarkdown(text: string): string {
 function insertInlineAd(htmlContent: string): string {
   const parts = htmlContent.split('</p>')
   if (parts.length > 6) {
-    const adHtml = '<div class="my-8 border border-border rounded-lg p-5 bg-gray-50 text-center"><p class="text-xs text-muted mb-1">AD</p><p class="text-sm font-bold mb-1">뉴욕·뉴저지 한인에게 업체를 알리세요</p><p class="text-xs text-muted mb-3">이동네 매거진 광고 · 첫 광고 시 프리미엄 할인</p><a href="mailto:info@edongne.com" class="text-xs bg-black text-white px-4 py-1.5 rounded-full hover:bg-gray-800 transition-colors inline-block">광고 문의 →</a></div>'
+    const adHtml = '<div class="my-8 border border-border rounded-lg p-5 bg-gray-50 text-center"><p class="text-xs text-muted mb-1">AD</p><p class="text-sm font-bold mb-1">뉴욕·뉴저지 한인에게 업체를 알리세요</p><p class="text-xs text-muted mb-3">이동네 매거진 광고 · 첫 광고 시 프리미엄 할인</p><a href="/contact" class="text-xs bg-black text-white px-4 py-1.5 rounded-full hover:bg-gray-800 transition-colors inline-block">광고 문의 →</a></div>'
     const midPoint = Math.floor(parts.length / 2)
     parts.splice(midPoint, 0, adHtml)
   }
@@ -272,7 +272,7 @@ export default function PostContent() {
 
         {/* Sidebar - magazine only */}
         {isMagazine && (
-          <aside className="hidden md:block space-y-6">
+          <aside className="hidden md:block"><div className="sticky top-20 space-y-6">
             <AdBanner variant="sidebar" />
             {relatedPosts.length > 0 && (
               <div>
@@ -288,7 +288,7 @@ export default function PostContent() {
                 </div>
               </div>
             )}
-          </aside>
+          </div></aside>
         )}
       </div>
     </div>
