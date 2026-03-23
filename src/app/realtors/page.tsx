@@ -41,7 +41,7 @@ export default function RealtorsPage() {
     const { data } = await supabase
       .from('businesses')
       .select('*, reviews(rating)')
-      .eq('category', 'realtor')
+      .eq('type', 'realtor')
       .order('created_at', { ascending: false });
 
     if (data) {
@@ -102,15 +102,15 @@ export default function RealtorsPage() {
                       </span>
                     )}
                     <div className="flex items-center gap-3 mb-3">
-                      {r.image_url ? (
-                        <img src={r.image_url} alt={r.name} className="w-14 h-14 rounded-full object-cover" />
+                      {r.hero_image ? (
+                        <img src={r.hero_image} alt={r.kor_name} className="w-14 h-14 rounded-full object-cover" />
                       ) : (
                         <div className="w-14 h-14 rounded-full bg-gray-200 flex items-center justify-center text-gray-400 text-xl">
-                          {r.name?.[0]}
+                          {r.kor_name?.[0]}
                         </div>
                       )}
                       <div>
-                        <h3 className="font-bold text-base">{r.name}</h3>
+                        <h3 className="font-bold text-base">{r.kor_name}</h3>
                         {r.region && <p className="text-xs text-gray-500">{r.region}</p>}
                       </div>
                     </div>
@@ -126,7 +126,7 @@ export default function RealtorsPage() {
                       ) : (
                         <span className="text-gray-300 text-xs">리뷰 없음</span>
                       )}
-                      {r.phone && <span className="text-gray-400 text-xs ml-auto">{r.phone}</span>}
+                      {r.phone1 && <span className="text-gray-400 text-xs ml-auto">{r.phone1}</span>}
                     </div>
                   </div>
                 </Link>

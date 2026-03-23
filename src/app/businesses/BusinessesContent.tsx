@@ -60,7 +60,7 @@ export default function BusinessesContent() {
       .order('created_at', { ascending: false });
 
     if (selectedCategory) {
-      query = query.eq('category', selectedCategory);
+      query = query.eq('type', selectedCategory);
     }
 
     const { data } = await query;
@@ -80,7 +80,7 @@ export default function BusinessesContent() {
 
   const filtered = searchQuery
     ? businesses.filter((b: any) =>
-        b.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        b.kor_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
         b.description?.toLowerCase().includes(searchQuery.toLowerCase())
       )
     : businesses;
@@ -157,15 +157,15 @@ export default function BusinessesContent() {
                       </span>
                     )}
                     <div className="flex items-center gap-3 mb-3">
-                      {b.image_url ? (
-                        <img src={b.image_url} alt={b.name} className="w-12 h-12 rounded-lg object-cover" />
+                      {b.hero_image ? (
+                        <img src={b.hero_image} alt={b.kor_name} className="w-12 h-12 rounded-lg object-cover" />
                       ) : (
                         <div className="w-12 h-12 rounded-lg bg-gray-200 flex items-center justify-center text-gray-400 font-bold">
-                          {b.name?.[0]}
+                          {b.kor_name?.[0]}
                         </div>
                       )}
                       <div className="min-w-0">
-                        <h3 className="font-bold text-sm truncate">{b.name}</h3>
+                        <h3 className="font-bold text-sm truncate">{b.kor_name}</h3>
                         {b.region && <p className="text-xs text-gray-500">{b.region}</p>}
                       </div>
                     </div>
@@ -182,7 +182,7 @@ export default function BusinessesContent() {
                         <span className="text-gray-300">리뷰 없음</span>
                       )}
                       <span className="text-gray-400">
-                        {CATEGORIES.find(c => c.value === b.category)?.label || b.category}
+                        {CATEGORIES.find(c => c.value === b.type)?.label || b.type}
                       </span>
                     </div>
                   </div>
