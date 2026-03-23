@@ -1,7 +1,7 @@
 'use client'
 
 import Link from 'next/link'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase-client'
 
@@ -23,7 +23,10 @@ const AVATAR_EMOJI: Record<string, string> = Object.fromEntries(
 )
 
 const ROLE_LABEL: Record<string, string> = {
-  super: '슈퍼관리자', editor: '에디터', business: '업체회원', user: '일반회원',
+  super: '슈퍼관리자',
+  editor: '에디터',
+  business: '업체회원',
+  user: '일반회원',
 }
 
 export default function MyPage() {
@@ -45,85 +48,92 @@ export default function MyPage() {
   const [myComments, setMyComments] = useState<any[]>([])
   const [myBookmarks, setMyBookmarks] = useState<any[]>([])
 
-  useEffect(() => {
-    loadProfile()
-  }, [])
+  const loadTabData = useCallback(async (t: Tab, userId: string) => {
+    if (!userId) return
 
-  async function loadProfile() {
-    setLoading(true)
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) {
-      router.push('/auth')
-      return
-    }
-    setAuthUser(user)
-
-    const { data: prof } = await supabase
-      .from('users')
-      .select('*')
-      .eq('id', user.id)
-      .single()
-
-    if (prof) {
-      setProfile(prof)
-      setNickname(prof.nickname)
-      setAvatarAnimal(prof.avatar_animal || 'bear')
-    }
-    setLoading(false)
-  }
-
-  async function loadTabData(t: Tab) {
-    if (!authUser) return
-
-    if (t === 'posts' && myPosts.length === 0) {
+    if (t === 'posts') {
       const { data } = await supabase
         .from('posts')
         .select('id, title, category, created_at, views')
-        .eq('user_id', authUser.id)
+        .eq('user_id', userId)
         .order('created_at', { ascending: false })
         .limit(30)
       if (data) setMyPosts(data)
     }
 
-    if (t === 'comments' && myComments.length === 0) {
+    if (t === 'comments') {
       const { data } = await supabase
         .from('comments')
         .select('id, content, created_at, post:posts(id, title)')
-        .eq('user_id', authUser.id)
+        .eq('user_id', userId)
         .order('created_at', { ascending: false })
         .limit(30)
       if (data) setMyComments(data)
     }
 
-    if (t === 'bookmarks' && myBookmarks.length === 0) {
+    if (t === 'bookmarks') {
       const { data } = await supabase
         .from('bookmarks')
         .select('id, created_at, post:posts(id, title, category, created_at)')
-        .eq('user_id', authUser.id)
+        .eq('user_id', userId)
         .order('created_at', { ascending: false })
         .limit(30)
       if (data) setMyBookmarks(data)
     }
-  }
+  }, [supabase])
+
+  useEffect(() => {
+    async function loadProfile() {
+      setLoading(true)
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) {
+        router.push('/auth')
+        return
+      }
+      setAuthUser(user)
+
+      const { data: prof } = await supabase
+        .from('users')
+        .select('*')
+        .eq('id', user.id)
+        .single()
+
+      if (prof) {
+        setProfile(prof)
+        setNickname(prof.nickname)
+        setAvatarAnimal(prof.avatar_animal || 'bear')
+      }
+
+      setLoading(false)
+
+      // Load initial tab data (posts) right after profile is loaded
+      loadTabData('posts', user.id)
+    }
+
+    loadProfile()
+  }, [])
 
   function handleTabChange(t: Tab) {
     setTab(t)
-    loadTabData(t)
+    if (authUser) {
+      if (t === 'posts' && myPosts.length === 0) {
+        loadTabData(t, authUser.id)
+      } else if (t === 'comments' && myComments.length === 0) {
+        loadTabData(t, authUser.id)
+      } else if (t === 'bookmarks' && myBookmarks.length === 0) {
+        loadTabData(t, authUser.id)
+      }
+    }
   }
 
   async function handleSave() {
     if (!authUser || !nickname.trim()) return
     setSaving(true)
     setSaveMsg('')
-
     const { error } = await supabase
       .from('users')
-      .update({
-        nickname: nickname.trim(),
-        avatar_animal: avatarAnimal,
-      })
+      .update({ nickname: nickname.trim(), avatar_animal: avatarAnimal })
       .eq('id', authUser.id)
-
     if (error) {
       setSaveMsg('저장 실패: ' + error.message)
     } else {
@@ -160,7 +170,8 @@ export default function MyPage() {
         <div>
           <h1 className="text-xl font-bold">{profile.nickname}</h1>
           <p className="text-sm text-muted">
-            {ROLE_LABEL[profile.role] || profile.role} · {new Date(profile.created_at).toLocaleDateString('ko-KR', { year: 'numeric', month: 'long' })} 가입
+            {ROLE_LABEL[profile.role] || profile.role} ·{' '}
+            {new Date(profile.created_at).toLocaleDateString('ko-KR', { year: 'numeric', month: 'long' })} 가입
           </p>
           <p className="text-xs text-muted mt-0.5">{profile.email}</p>
         </div>
@@ -192,7 +203,7 @@ export default function MyPage() {
           {myPosts.length === 0 ? (
             <p className="text-sm text-muted">아직 작성한 글이 없습니다.</p>
           ) : myPosts.map((p) => (
-            <Link key={p.id} href={`/board/${p.id}`} className="block py-3 border-b border-border hover:bg-gray-50 -mx-2 px-2 rounded">
+            <Link key={p.id} href={`/post/${p.id}`} className="block py-3 border-b border-border hover:bg-gray-50 -mx-2 px-2 rounded">
               <p className="text-sm font-medium">{p.title}</p>
               <p className="text-xs text-muted mt-1">
                 {new Date(p.created_at).toLocaleDateString('ko-KR')} · 조회 {p.views}
@@ -208,7 +219,7 @@ export default function MyPage() {
           {myComments.length === 0 ? (
             <p className="text-sm text-muted">아직 작성한 댓글이 없습니다.</p>
           ) : myComments.map((c) => (
-            <Link key={c.id} href={`/board/${c.post?.id}`} className="block py-3 border-b border-border hover:bg-gray-50 -mx-2 px-2 rounded">
+            <Link key={c.id} href={`/post/${c.post?.id}`} className="block py-3 border-b border-border hover:bg-gray-50 -mx-2 px-2 rounded">
               <p className="text-sm">{c.content}</p>
               <p className="text-xs text-muted mt-1">
                 {c.post?.title && <span className="text-gray-500">"{c.post.title}"에 댓글 · </span>}
@@ -225,7 +236,7 @@ export default function MyPage() {
           {myBookmarks.length === 0 ? (
             <p className="text-sm text-muted">북마크한 글이 없습니다.</p>
           ) : myBookmarks.map((b) => (
-            <Link key={b.id} href={`/board/${b.post?.id}`} className="block py-3 border-b border-border hover:bg-gray-50 -mx-2 px-2 rounded">
+            <Link key={b.id} href={`/post/${b.post?.id}`} className="block py-3 border-b border-border hover:bg-gray-50 -mx-2 px-2 rounded">
               <p className="text-sm font-medium">{b.post?.title}</p>
               <p className="text-xs text-muted mt-1">
                 {new Date(b.post?.created_at || b.created_at).toLocaleDateString('ko-KR')}
@@ -249,7 +260,6 @@ export default function MyPage() {
             />
             <p className="text-xs text-muted mt-1">커뮤니티에서 표시될 이름입니다</p>
           </div>
-
           <div>
             <label className="block text-sm font-medium mb-1.5">아바타</label>
             <div className="grid grid-cols-4 gap-2 w-64">
@@ -258,9 +268,7 @@ export default function MyPage() {
                   key={a.key}
                   onClick={() => setAvatarAnimal(a.key)}
                   className={`py-2 border rounded-lg transition-colors ${
-                    avatarAnimal === a.key
-                      ? 'border-black bg-gray-100'
-                      : 'border-border hover:bg-gray-50'
+                    avatarAnimal === a.key ? 'border-black bg-gray-100' : 'border-border hover:bg-gray-50'
                   }`}
                 >
                   <span className="text-lg">{a.emoji}</span>
@@ -268,7 +276,6 @@ export default function MyPage() {
               ))}
             </div>
           </div>
-
           <div className="flex items-center gap-3 pt-2">
             <button
               onClick={handleSave}
