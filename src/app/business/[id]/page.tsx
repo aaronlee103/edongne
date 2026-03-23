@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase-client'
 import { uploadImage } from '@/lib/upload'
-import AdBanner from '@/components/AdBanner'
+// AdBanner removed from business profile
 import { getPlanLimits } from '@/lib/planLimits';
 
 const PLAN_LABEL: Record<string, string> = { premium: 'PREMIUM', pro: 'PRO' }
@@ -278,8 +278,7 @@ export default function BusinessDetailPage({ params }: { params: { id: string } 
 
       {/* 광고 배너 */}
       <div className="mb-8">
-        <AdBanner variant="banner" />
-      </div>
+</div>
 
       {/* 리뷰 섹션 */}
       <section>
