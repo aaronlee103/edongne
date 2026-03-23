@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { createClient } from '@/lib/supabase-client';
 import Link from 'next/link';
 
@@ -8,133 +8,201 @@ const DESKTOP_PER_PAGE = 30;
 const MOBILE_PER_PAGE = 15;
 
 export default function RealtorsPage() {
-  const supabase = createClient();
   const [realtors, setRealtors] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
-  const [selectedRegion, setSelectedRegion] = useState('');
+  const [selectedRegion, setSelectedRegion] = useState('전체');
+  const [selectedArea, setSelectedArea] = useState('전체');
   const [searchQuery, setSearchQuery] = useState('');
   const [isMobile, setIsMobile] = useState(false);
 
   useEffect(() => {
-    const check = () => setIsMobile(window.innerWidth < 768);
-    check();
-    window.addEventListener('resize', check);
-    return () => window.removeEventListener('resize', check);
+    const checkMobile = () => setIsMobile(window.innerWidth < 768);
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
   }, []);
 
-  useEffect(() => { fetchRealtors(); }, []);
+  useEffect(() => {
+    const fetchRealtors = async () => {
+      const supabase = createClient();
+      const { data, error } = await supabase
+        .from('businesses')
+        .select('*, reviews(score)')
+        .eq('type', 'realtor')
+        .order('created_at', { ascending: false });
+      if (!error && data) setRealtors(data);
+      setLoading(false);
+    };
+    fetchRealtors();
+  }, []);
 
-  async function fetchRealtors() {
-    setLoading(true);
-    const { data } = await supabase
-      .from('businesses')
-      .select('*, reviews(score)')
-      .eq('type', 'realtor')
-      .order('created_at', { ascending: false });
-    if (data) {
-      const withRating = data.map((b: any) => {
-        const scores = b.reviews?.map((r: any) => r.score).filter(Boolean) || [];
-        const avg = scores.length > 0 ? scores.reduce((a: number, c: number) => a + c, 0) / scores.length : 0;
-        return { ...b, avgRating: avg, reviewCount: scores.length };
-      });
-      setRealtors(withRating);
-    }
-    setLoading(false);
-    setCurrentPage(1);
-  }
+  const areas = useMemo(() => {
+    if (selectedRegion === '전체') return [];
+    const regionCode = selectedRegion === '뉴욕' ? 'NY' : 'NJ';
+    const regionData = realtors.filter((r: any) => r.region === regionCode);
+    return [...new Set(regionData.map((r: any) => r.area).filter(Boolean))].sort();
+  }, [selectedRegion, realtors]);
+
+  useEffect(() => {
+    setSelectedArea('전체');
+  }, [selectedRegion]);
 
   const filtered = realtors.filter((r: any) => {
-    if (selectedRegion && r.region !== selectedRegion) return false;
+    if (selectedRegion !== '전체') {
+      const regionCode = selectedRegion === '뉴욕' ? 'NY' : 'NJ';
+      if (r.region !== regionCode) return false;
+    }
+    if (selectedArea !== '전체' && r.area !== selectedArea) return false;
     if (searchQuery) {
       const q = searchQuery.toLowerCase();
-      return r.kor_name?.toLowerCase().includes(q) || r.eng_name?.toLowerCase().includes(q) || r.specialty?.toLowerCase().includes(q) || r.area?.toLowerCase().includes(q);
+      const match =
+        r.kor_name?.toLowerCase().includes(q) ||
+        r.eng_name?.toLowerCase().includes(q) ||
+        r.area?.toLowerCase().includes(q) ||
+        r.specialty?.toLowerCase().includes(q);
+      if (!match) return false;
     }
     return true;
   });
 
-  const itemsPerPage = isMobile ? MOBILE_PER_PAGE : DESKTOP_PER_PAGE;
-  const totalPages = Math.ceil(filtered.length / itemsPerPage);
-  const paginated = filtered.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
+  const perPage = isMobile ? MOBILE_PER_PAGE : DESKTOP_PER_PAGE;
+  const totalPages = Math.ceil(filtered.length / perPage);
+  const paged = filtered.slice((currentPage - 1) * perPage, currentPage * perPage);
+
+  const getAvgRating = (reviews: any[]) => {
+    if (!reviews || reviews.length === 0) return null;
+    const avg = reviews.reduce((sum: number, r: any) => sum + r.score, 0) / reviews.length;
+    return avg.toFixed(1);
+  };
+
+  if (loading) return <div className="text-center py-20 text-gray-400">로딩 중...</div>;
 
   return (
-    <div className="max-w-6xl mx-auto px-4 py-8">
-      <h1 className="text-2xl font-bold mb-2">부동산 리얼터</h1>
-      <p className="text-gray-500 mb-4">NY/NJ 지역 한인 부동산 전문가를 찾아보세요</p>
+    <div className="max-w-7xl mx-auto px-4 py-10">
+      <h1 className="text-2xl font-bold mb-6">리얼터 디렉토리</h1>
 
-      <div className="flex flex-wrap items-center gap-3 mb-6">
-        <div className="flex gap-2">
-          {[{ value: '', label: '전체' }, { value: 'NY', label: '뉴욕' }, { value: 'NJ', label: '뉴저지' }].map(r => (
-            <button key={r.value} onClick={() => { setSelectedRegion(r.value); setCurrentPage(1); }}
-              className={`px-4 py-1.5 rounded-full text-sm font-medium transition-colors ${selectedRegion === r.value ? 'bg-black text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}>
-              {r.label}
+      <div className="flex flex-wrap gap-2 mb-4">
+        {['전체', '뉴욕', '뉴저지'].map(region => (
+          <button
+            key={region}
+            onClick={() => { setSelectedRegion(region); setCurrentPage(1); }}
+            className={`px-4 py-2 rounded-full text-sm font-medium transition ${
+              selectedRegion === region
+                ? 'bg-blue-600 text-white'
+                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+            }`}
+          >
+            {region}
+          </button>
+        ))}
+      </div>
+
+      {selectedRegion !== '전체' && areas.length > 0 && (
+        <div className="flex flex-wrap gap-2 mb-4">
+          <button
+            onClick={() => { setSelectedArea('전체'); setCurrentPage(1); }}
+            className={`px-3 py-1.5 rounded-full text-xs font-medium transition ${
+              selectedArea === '전체'
+                ? 'bg-green-600 text-white'
+                : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+            }`}
+          >
+            전체
+          </button>
+          {areas.map((area: string) => (
+            <button
+              key={area}
+              onClick={() => { setSelectedArea(area); setCurrentPage(1); }}
+              className={`px-3 py-1.5 rounded-full text-xs font-medium transition ${
+                selectedArea === area
+                  ? 'bg-green-600 text-white'
+                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+              }`}
+            >
+              {area}
             </button>
           ))}
         </div>
-        <input type="text" placeholder="업체명, 지역 검색..." value={searchQuery}
+      )}
+
+      <div className="mb-6">
+        <input
+          type="text"
+          placeholder="이름, 지역, 전문분야 검색..."
+          value={searchQuery}
           onChange={(e) => { setSearchQuery(e.target.value); setCurrentPage(1); }}
-          className="ml-auto border rounded-lg px-3 py-1.5 text-sm w-48" />
+          className="w-full md:w-80 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+        />
       </div>
 
-      {loading ? (
-        <div className="text-center py-20 text-gray-400">로딩 중...</div>
-      ) : paginated.length === 0 ? (
-        <div className="text-center py-20 text-gray-400">등록된 리얼터가 없습니다.</div>
+      <p className="text-sm text-gray-500 mb-4">총 {filtered.length}명의 리얼터</p>
+
+      {paged.length === 0 ? (
+        <div className="text-center py-20 text-gray-400">검색 결과가 없습니다.</div>
       ) : (
-        <>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {paginated.map((r: any) => (
-              <Link key={r.id} href={`/business/${r.id}`}>
-                <div className="rounded-lg border border-gray-200 hover:shadow-lg transition-all h-full overflow-hidden bg-white">
-                  {r.hero_image && (
-                    <div className="aspect-[16/9] bg-gray-100">
-                      <img src={r.hero_image} alt={r.kor_name} className="w-full h-full object-cover" />
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {paged.map((realtor: any) => {
+            const avg = getAvgRating(realtor.reviews);
+            return (
+              <Link href={`/businesses/${realtor.id}`} key={realtor.id}>
+                <div className="border rounded-xl overflow-hidden hover:shadow-lg transition cursor-pointer bg-white">
+                  {realtor.hero_image && (
+                    <div className="w-full h-48 overflow-hidden">
+                      <img
+                        src={realtor.hero_image}
+                        alt={realtor.kor_name}
+                        className="w-full h-full object-cover"
+                      />
                     </div>
                   )}
                   <div className="p-4">
-                    <h3 className="font-bold text-base">{r.kor_name}</h3>
-                    {r.eng_name && <p className="text-xs text-gray-400">{r.eng_name}</p>}
-                    <div className="flex items-center gap-2 mt-1">
-                      {r.region && <span className="text-xs text-gray-500">{r.region}</span>}
-                      {r.area && <span className="text-xs text-gray-400">· {r.area}</span>}
-                    </div>
-                    {r.specialty && <p className="text-xs text-gray-500 mt-1">{r.specialty}</p>}
-                    <div className="flex items-center justify-between mt-2 text-xs">
-                      {r.avgRating > 0 ? (
-                        <span className="text-yellow-500">
-                          {'★'.repeat(Math.round(r.avgRating))}{'☆'.repeat(5 - Math.round(r.avgRating))}
-                          <span className="text-gray-400 ml-1">({r.reviewCount})</span>
-                        </span>
-                      ) : (
-                        <span className="text-gray-300">리뷰 없음</span>
+                    <h2 className="text-lg font-semibold">{realtor.kor_name}</h2>
+                    {realtor.eng_name && (
+                      <p className="text-sm text-gray-500">{realtor.eng_name}</p>
+                    )}
+                    <p className="text-sm text-gray-600 mt-1">
+                      {realtor.region}{realtor.area ? ` · ${realtor.area}` : ''}
+                    </p>
+                    {realtor.specialty && (
+                      <p className="text-sm text-blue-600 mt-1">{realtor.specialty}</p>
+                    )}
+                    <div className="flex items-center justify-between mt-2">
+                      {avg && (
+                        <span className="text-sm text-yellow-500 font-medium">★ {avg}</span>
                       )}
-                      {r.phone1 && <span className="text-gray-400">{r.phone1}</span>}
+                      {realtor.phone1 && (
+                        <span className="text-sm text-gray-500">{realtor.phone1}</span>
+                      )}
                     </div>
                   </div>
                 </div>
               </Link>
-            ))}
-          </div>
+            );
+          })}
+        </div>
+      )}
 
-          {totalPages > 1 && (
-            <div className="flex justify-center items-center gap-2 mt-8">
-              <button onClick={() => setCurrentPage(p => Math.max(1, p - 1))} disabled={currentPage === 1}
-                className="px-3 py-2 rounded border text-sm disabled:opacity-30 hover:bg-gray-50">← 이전</button>
-              {Array.from({ length: totalPages }, (_, i) => i + 1)
-                .filter(page => totalPages <= 7 || page === 1 || page === totalPages || Math.abs(page - currentPage) <= 2)
-                .map((page, idx, arr) => (
-                  <span key={page} className="flex items-center gap-1">
-                    {idx > 0 && arr[idx - 1] !== page - 1 && <span className="text-gray-300 px-1">...</span>}
-                    <button onClick={() => setCurrentPage(page)}
-                      className={`w-9 h-9 rounded text-sm font-medium ${currentPage === page ? 'bg-black text-white' : 'border hover:bg-gray-50'}`}>{page}</button>
-                  </span>
-                ))}
-              <button onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))} disabled={currentPage === totalPages}
-                className="px-3 py-2 rounded border text-sm disabled:opacity-30 hover:bg-gray-50">다음 →</button>
-            </div>
-          )}
-          <p className="text-center text-xs text-gray-400 mt-3">총 {filtered.length}개 업체</p>
-        </>
+      {totalPages > 1 && (
+        <div className="flex justify-center items-center gap-2 mt-10">
+          <button
+            onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+            disabled={currentPage === 1}
+            className="px-3 py-1 rounded bg-gray-200 disabled:opacity-50"
+          >
+            이전
+          </button>
+          <span className="text-sm text-gray-600">
+            {currentPage} / {totalPages}
+          </span>
+          <button
+            onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+            disabled={currentPage === totalPages}
+            className="px-3 py-1 rounded bg-gray-200 disabled:opacity-50"
+          >
+            다음
+          </button>
+        </div>
       )}
     </div>
   );
