@@ -155,8 +155,8 @@ export default function BusinessDetailPage({ params }: { params: { id: string } 
             <div className="flex items-center gap-2 mt-2">
               <h1 className="text-2xl font-bold">{business.kor_name}</h1>
               {isOwner && (
-                <button onClick={() => setShowEdit(true)} className="text-xs bg-gray-100 text-secondary px-2.5 py-1 rounded-full hover:bg-gray-200 transition-colors">수정</button>
-                <Link href={`/business/${params.id}/dashboard`} className="text-xs bg-black text-white px-2.5 py-1 rounded-full hover:bg-gray-800 transition-colors">대시보드</Link>
+                <><button onClick={() => setShowEdit(true)} className="text-xs bg-gray-100 text-secondary px-2.5 py-1 rounded-full hover:bg-gray-200 transition-colors">수정</button>
+                <Link href={`/business/${params.id}/dashboard`} className="text-xs bg-black text-white px-2.5 py-1 rounded-full hover:bg-gray-800 transition-colors">대시보드</Link></>
               )}
             </div>
             {business.eng_name && <p className="text-muted text-sm">{business.eng_name}</p>}

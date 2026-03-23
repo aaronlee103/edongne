@@ -233,7 +233,13 @@ export default function PostContent() {
               <div className="prose prose-sm max-w-none whitespace-pre-wrap text-sm leading-relaxed">{post.content}</div>
             )}
 
-            {/* 좋아요 버튼 */}
+            {authorNickname === '이동네' && (
+                  <div className="mt-8 pt-4 border-t border-gray-200">
+                    <p className="text-xs text-gray-400">© 2026 이동네 edongne.com — 무단 전재 및 재배포 금지</p>
+                  </div>
+                )}
+
+                {/* 좋아요 버튼 */}
             <div className="flex items-center gap-4 mt-6 pt-6 border-t border-border">
               <button onClick={handleLike} disabled={likeLoading}
                 className={`flex items-center gap-2 px-4 py-2 rounded-full border transition-colors ${liked ? 'bg-red-50 border-red-200 text-red-500' : 'border-border text-muted hover:bg-gray-50'}`}>
