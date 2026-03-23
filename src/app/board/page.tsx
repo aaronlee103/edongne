@@ -14,6 +14,12 @@ const CATEGORIES = [
   { key: 'housing', label: '렌트/룸메' },
 ]
 
+// 매물 페이지 링크 (별도 페이지로 이동)
+const LISTING_TABS = [
+  { label: '매매', href: '/listings?type=sale' },
+  { label: '렌트매물', href: '/listings?type=rent' },
+]
+
 export default function BoardPage() {
   const [activeCategory, setActiveCategory] = useState('all')
   const [posts, setPosts] = useState<any[]>([])
@@ -26,6 +32,7 @@ export default function BoardPage() {
 
   async function fetchPosts() {
     setLoading(true)
+
     let query = supabase
       .from('posts')
       .select('*, votes(value), comments(id)')
@@ -39,6 +46,7 @@ export default function BoardPage() {
     }
 
     const { data, error } = await query
+
     if (!error && data) {
       setPosts(data.map((p: any) => ({
         ...p,
@@ -84,6 +92,20 @@ export default function BoardPage() {
             {cat.label}
           </button>
         ))}
+
+        {/* 구분선 */}
+        <div className="w-px bg-gray-300 mx-1 self-stretch" />
+
+        {/* 매물 탭 (별도 페이지 링크) */}
+        {LISTING_TABS.map((tab) => (
+          <Link
+            key={tab.href}
+            href={tab.href}
+            className="px-3 py-1.5 text-sm rounded-full whitespace-nowrap transition-colors bg-orange-50 text-orange-600 hover:bg-orange-100 border border-orange-200 flex items-center gap-1"
+          >
+            🏠 {tab.label}
+          </Link>
+        ))}
       </div>
 
       {/* 게시글 목록 */}
@@ -92,7 +114,10 @@ export default function BoardPage() {
       ) : posts.length === 0 ? (
         <div className="text-center py-12">
           <p className="text-muted text-sm mb-4">아직 게시글이 없습니다.</p>
-          <Link href="/write" className="text-sm bg-black text-white px-4 py-1.5 rounded-full hover:bg-gray-800">
+          <Link
+            href="/write"
+            className="text-sm bg-black text-white px-4 py-1.5 rounded-full hover:bg-gray-800"
+          >
             첫 글 작성하기
           </Link>
         </div>
