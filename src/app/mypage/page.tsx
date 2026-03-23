@@ -42,6 +42,7 @@ export default function MyPage() {
   const [avatarAnimal, setAvatarAnimal] = useState('bear')
   const [saving, setSaving] = useState(false)
   const [saveMsg, setSaveMsg] = useState('')
+  const [nicknameError, setNicknameError] = useState('')
 
   // Tab content
   const [myPosts, setMyPosts] = useState<any[]>([])
@@ -105,8 +106,6 @@ export default function MyPage() {
       }
 
       setLoading(false)
-
-      // Load initial tab data (posts) right after profile is loaded
       loadTabData('posts', user.id)
     }
 
@@ -126,10 +125,39 @@ export default function MyPage() {
     }
   }
 
+  async function checkNicknameDuplicate(name: string): Promise<boolean> {
+    if (!authUser) return false
+    const trimmed = name.trim()
+    if (!trimmed) return false
+
+    // If nickname hasn't changed, no need to check
+    if (trimmed === profile?.nickname) return false
+
+    const { data, error } = await supabase
+      .from('users')
+      .select('id')
+      .eq('nickname', trimmed)
+      .neq('id', authUser.id)
+      .limit(1)
+
+    if (error) return false
+    return data && data.length > 0
+  }
+
   async function handleSave() {
     if (!authUser || !nickname.trim()) return
     setSaving(true)
     setSaveMsg('')
+    setNicknameError('')
+
+    // Check for duplicate nickname
+    const isDuplicate = await checkNicknameDuplicate(nickname)
+    if (isDuplicate) {
+      setNicknameError('이미 사용 중인 닉네임입니다.')
+      setSaving(false)
+      return
+    }
+
     const { error } = await supabase
       .from('users')
       .update({ nickname: nickname.trim(), avatar_animal: avatarAnimal })
@@ -254,11 +282,20 @@ export default function MyPage() {
             <input
               type="text"
               value={nickname}
-              onChange={(e) => setNickname(e.target.value)}
+              onChange={(e) => {
+                setNickname(e.target.value)
+                setNicknameError('')
+              }}
               maxLength={20}
-              className="w-full md:w-64 px-3 py-2 border border-border rounded-lg text-sm focus:outline-none focus:border-black"
+              className={`w-full md:w-64 px-3 py-2 border rounded-lg text-sm focus:outline-none ${
+                nicknameError ? 'border-red-400 focus:border-red-500' : 'border-border focus:border-black'
+              }`}
             />
-            <p className="text-xs text-muted mt-1">커뮤니티에서 표시될 이름입니다</p>
+            {nicknameError ? (
+              <p className="text-xs text-red-500 mt-1">{nicknameError}</p>
+            ) : (
+              <p className="text-xs text-muted mt-1">커뮤니티에서 표시될 이름입니다</p>
+            )}
           </div>
           <div>
             <label className="block text-sm font-medium mb-1.5">아바타</label>
