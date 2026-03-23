@@ -6,6 +6,7 @@ import Link from 'next/link'
 import { createClient } from '@/lib/supabase-client'
 import { uploadImage } from '@/lib/upload'
 import AdBanner from '@/components/AdBanner'
+import { getPlanLimits } from '@/lib/planLimits';
 
 const PLAN_LABEL: Record<string, string> = { premium: 'PREMIUM', pro: 'PRO' }
 const PLAN_COLOR: Record<string, string> = {
@@ -215,6 +216,13 @@ export default function BusinessDetailPage({ params }: { params: { id: string } 
                   <img src={item.url} alt={item.caption || `포트폴리오 ${i + 1}`}
                     className="w-full h-36 md:h-44 object-cover group-hover:scale-105 transition-transform duration-300" />
                 </div>
+
+            {business?.portfolio && business.portfolio.length > getPlanLimits(business?.plan).maxPortfolioImages && (
+              <p className="text-sm text-gray-500 mt-2 text-center">
+                현재 플랜에서는 {getPlanLimits(business?.plan).maxPortfolioImages}장까지 표시됩니다.
+                포트폴리오를 더 보시려면 플랜을 업그레이드하세요.
+              </p>
+            )}
                 {item.caption && (
                   <p className="text-xs text-muted mt-1.5 line-clamp-2">{item.caption}</p>
                 )}
