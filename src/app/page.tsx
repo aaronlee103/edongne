@@ -69,6 +69,7 @@ function HomeContent() {
       setIssueCategory('all')
     }
     if (!cat && !search) {
+      setIssueCategory('all')
       setSearchTerm('')
     }
   }, [searchParams])
