@@ -22,11 +22,21 @@ export const metadata: Metadata = {
     siteName: '이동네',
     title: '이동네 - 뉴욕·뉴저지 한인 커뮤니티',
     description: '뉴욕 뉴저지 한인 부동산, 건축, 변호사, 융자 전문가 찾기 & 생활정보 커뮤니티',
+    url: SITE_URL,
+    images: [
+      {
+        url: `${SITE_URL}/og-image.png`,
+        width: 1200,
+        height: 630,
+        alt: '이동네 - 뉴욕·뉴저지 한인 커뮤니티',
+      },
+    ],
   },
   twitter: {
     card: 'summary_large_image',
     title: '이동네 - 뉴욕·뉴저지 한인 커뮤니티',
     description: '뉴욕 뉴저지 한인 부동산, 건축, 변호사, 융자 전문가 찾기 & 생활정보 커뮤니티',
+    images: [`${SITE_URL}/og-image.png`],
   },
   robots: {
     index: true,
@@ -41,6 +51,9 @@ export const metadata: Metadata = {
   },
   verification: {
     google: 'bl855H3ZsiePJK5oISjc_6VvkiVQ9RM3GlMUjZUSAfM',
+    other: {
+      'naver-site-verification': '66bf2ce8562090d147c23bde2c5efaf2ddcb35de',
+    },
   },
   icons: {
     icon: [
