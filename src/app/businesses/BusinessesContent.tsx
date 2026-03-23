@@ -56,7 +56,7 @@ export default function BusinessesContent() {
     setLoading(true);
     let query = supabase
       .from('businesses')
-      .select('*, reviews(rating)')
+      .select('*, reviews(score)')
       .order('created_at', { ascending: false });
 
     if (selectedCategory) {
@@ -67,7 +67,7 @@ export default function BusinessesContent() {
 
     if (data) {
       const withRating = data.map((b: any) => {
-        const ratings = b.reviews?.map((r: any) => r.rating).filter(Boolean) || [];
+        const ratings = b.reviews?.map((r: any) => r.score).filter(Boolean) || [];
         const avgRating = ratings.length > 0 ? ratings.reduce((a: number, b: number) => a + b, 0) / ratings.length : 0;
         return { ...b, avgRating, reviewCount: ratings.length };
       });

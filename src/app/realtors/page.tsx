@@ -40,13 +40,13 @@ export default function RealtorsPage() {
     setLoading(true);
     const { data } = await supabase
       .from('businesses')
-      .select('*, reviews(rating)')
+      .select('*, reviews(score)')
       .eq('type', 'realtor')
       .order('created_at', { ascending: false });
 
     if (data) {
       const withRating = data.map((b: any) => {
-        const ratings = b.reviews?.map((r: any) => r.rating).filter(Boolean) || [];
+        const ratings = b.reviews?.map((r: any) => r.score).filter(Boolean) || [];
         const avgRating = ratings.length > 0 ? ratings.reduce((a: number, b: number) => a + b, 0) / ratings.length : 0;
         return { ...b, avgRating, reviewCount: ratings.length };
       });
