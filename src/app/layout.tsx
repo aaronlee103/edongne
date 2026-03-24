@@ -1,10 +1,12 @@
 import type { Metadata } from 'next'
 import { Suspense } from 'react'
+import { cookies } from 'next/headers'
 import './globals.css'
 import Header from '@/components/layout/Header'
 import Footer from '@/components/layout/Footer'
 import GoogleAnalytics from '@/components/GoogleAnalytics'
 import PageTracker from '@/components/PageTracker'
+import { RegionProvider } from '@/context/RegionContext'
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://www.edongne.com'
 
@@ -68,21 +70,26 @@ export const metadata: Metadata = {
   },
 }
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: {
   children: React.ReactNode
 }) {
+  const cookieStore = await cookies()
+  const initialRegion = cookieStore.get('edongne_region')?.value || 'ny'
+
   return (
     <html lang="ko">
       <body className="min-h-screen flex flex-col">
         <GoogleAnalytics />
         <PageTracker />
-        <Suspense fallback={null}>
-          <Header />
-        </Suspense>
-        <main className="flex-1">{children}</main>
-        <Footer />
+        <RegionProvider initialRegion={initialRegion}>
+          <Suspense fallback={null}>
+            <Header />
+          </Suspense>
+          <main className="flex-1">{children}</main>
+          <Footer />
+        </RegionProvider>
       </body>
     </html>
   )
