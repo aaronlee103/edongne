@@ -3,6 +3,7 @@
 
 import { useEffect, useState } from 'react';
 import { createClient } from '@/lib/supabase-client';
+import { useRegion } from '@/context/RegionContext';
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 
@@ -24,10 +25,11 @@ export default function ListingsContent() {
     (searchParams.get('type') as 'sale' | 'rent') || 'rent'
   );
   const [selectedCity, setSelectedCity] = useState('전체');
+  const { regionCode } = useRegion();
 
   useEffect(() => {
     fetchListings();
-  }, [type]);
+  }, [type, regionCode]);
 
   async function fetchListings() {
     setLoading(true);
@@ -36,6 +38,7 @@ export default function ListingsContent() {
       .select('*, users:user_id(nickname, avatar_url), businesses:business_id(name, plan)')
       .eq('type', type)
       .eq('status', 'active')
+      .or(`region.eq.${regionCode},region.eq.all,region.is.null`)
       .order('created_at', { ascending: false });
 
     setListings(data || []);
