@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { useState, useEffect, useRef, useCallback, Suspense } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase-client'
+import { useRegion } from '@/context/RegionContext'
 
 const ISSUE_CATEGORIES = [
   { key: 'all', label: '전체' },
@@ -29,6 +30,7 @@ export default function Home() {
 function HomeContent() {
   const supabase = createClient()
   const searchParams = useSearchParams()
+  const { regionCode } = useRegion()
   const [issueCategory, setIssueCategory] = useState('all')
   const [allPosts, setAllPosts] = useState<any[]>([])
   const [editorPicks, setEditorPicks] = useState<any[]>([])
@@ -79,12 +81,12 @@ function HomeContent() {
     fetchPopularPosts()
     fetchWeeklyPopular()
     fetchBusinessCounts()
-  }, [])
+  }, [regionCode])
 
   useEffect(() => {
     fetchAllPosts()
     setCurrentPage(1)
-  }, [issueCategory, searchTerm])
+  }, [issueCategory, searchTerm, regionCode])
 
   async function fetchEditorPicks() {
     const { data } = await supabase
@@ -93,6 +95,7 @@ function HomeContent() {
       .eq('type', 'magazine')
       .eq('category', 'editor')
       .or('published.is.null,published.eq.true')
+      .or(`region.eq.${regionCode},region.eq.all,region.is.null`)
       .order('created_at', { ascending: false })
       .limit(5)
     if (data) setEditorPicks(data)
@@ -104,6 +107,7 @@ function HomeContent() {
       .select('*, users(nickname)')
       .eq('type', 'magazine')
       .or('published.is.null,published.eq.true')
+      .or(`region.eq.${regionCode},region.eq.all,region.is.null`)
       .order('created_at', { ascending: false })
     if (searchTerm) {
       // 제목 또는 내용에서 검색어 포함 여부 확인
@@ -121,6 +125,7 @@ function HomeContent() {
       .select('*, comments(id), votes(value)')
       .eq('type', 'community')
       .or('published.is.null,published.eq.true')
+      .or(`region.eq.${regionCode},region.eq.all,region.is.null`)
       .order('created_at', { ascending: false })
       .limit(6)
     if (data) {
@@ -139,6 +144,7 @@ function HomeContent() {
       .select('*, users(nickname)')
       .eq('type', 'magazine')
       .or('published.is.null,published.eq.true')
+      .or(`region.eq.${regionCode},region.eq.all,region.is.null`)
       .gte('created_at', weekAgo)
       .order('views', { ascending: false })
       .limit(5)
