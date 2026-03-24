@@ -3,6 +3,7 @@
 import Link from 'next/link'
 import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase-client'
+import { useRegion } from '@/context/RegionContext'
 
 const CATEGORIES = [
   { key: 'all', label: '전체' },
@@ -25,10 +26,11 @@ export default function BoardPage() {
   const [posts, setPosts] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const supabase = createClient()
+  const { regionCode } = useRegion()
 
   useEffect(() => {
     fetchPosts()
-  }, [activeCategory])
+  }, [activeCategory, regionCode])
 
   async function fetchPosts() {
     setLoading(true)
@@ -38,6 +40,7 @@ export default function BoardPage() {
       .select('*, votes(value), comments(id)')
       .eq('type', 'community')
       .or('published.is.null,published.eq.true')
+      .or(`region.eq.${regionCode},region.eq.all,region.is.null`)
       .order('created_at', { ascending: false })
       .limit(20)
 
