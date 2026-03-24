@@ -208,7 +208,7 @@ export default function NewListingPage() {
           <Link href="/pricing" className="bg-black text-white px-6 py-2.5 rounded-lg text-sm hover:bg-gray-800">
             요금제 보기
           </Link>
-          <Link href="/community" className="border px-6 py-2.5 rounded-lg text-sm hover:bg-gray-50">
+          <Link href="/listings" className="border px-6 py-2.5 rounded-lg text-sm hover:bg-gray-50">
             돌아가기
           </Link>
         </div>
