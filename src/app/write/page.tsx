@@ -1,8 +1,10 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase-client'
+import { uploadImage } from '@/lib/upload'
+import { useRegion } from '@/context/RegionContext'
 
 const CATEGORIES = [
   { key: 'free', label: '자유' },
@@ -13,14 +15,21 @@ const CATEGORIES = [
   { key: 'housing', label: '렌트/룸메' },
 ]
 
+const MAX_FILE_SIZE = 2 * 1024 * 1024 // 2MB
+
 export default function WritePage() {
   const router = useRouter()
   const supabase = createClient()
+  const fileInputRef = useRef<HTMLInputElement>(null)
+  const { regionCode } = useRegion()
   const [category, setCategory] = useState('free')
   const [title, setTitle] = useState('')
   const [content, setContent] = useState('')
   const [loading, setLoading] = useState(false)
   const [user, setUser] = useState<any>(null)
+  const [imageFile, setImageFile] = useState<File | null>(null)
+  const [imagePreview, setImagePreview] = useState<string | null>(null)
+  const [uploadingImage, setUploadingImage] = useState(false)
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => {
@@ -32,18 +41,61 @@ export default function WritePage() {
     })
   }, [])
 
+  const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    if (!file.type.startsWith('image/')) {
+      alert('이미지 파일만 업로드 가능합니다.')
+      return
+    }
+
+    if (file.size > MAX_FILE_SIZE) {
+      alert('이미지 크기는 2MB 이하만 가능합니다.')
+      return
+    }
+
+    setImageFile(file)
+    const reader = new FileReader()
+    reader.onload = (ev) => setImagePreview(ev.target?.result as string)
+    reader.readAsDataURL(file)
+  }
+
+  const removeImage = () => {
+    setImageFile(null)
+    setImagePreview(null)
+    if (fileInputRef.current) fileInputRef.current.value = ''
+  }
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!user) return router.push('/auth')
 
     setLoading(true)
-    const { error } = await supabase.from('posts').insert({
+
+    let imageUrl: string | null = null
+    if (imageFile) {
+      setUploadingImage(true)
+      imageUrl = await uploadImage(imageFile)
+      setUploadingImage(false)
+      if (!imageUrl) {
+        alert('이미지 업로드에 실패했습니다.')
+        setLoading(false)
+        return
+      }
+    }
+
+    const insertData: any = {
       user_id: user.id,
       type: 'community',
       category,
       title,
       content,
-    })
+      region: regionCode,
+    }
+    if (imageUrl) insertData.image_url = imageUrl
+
+    const { error } = await supabase.from('posts').insert(insertData)
 
     if (error) {
       alert('글 작성에 실패했습니다: ' + error.message)
@@ -97,13 +149,51 @@ export default function WritePage() {
           />
         </div>
 
+        {/* 이미지 업로드 */}
+        <div>
+          <label className="block text-sm font-medium mb-1.5">이미지 (선택)</label>
+          {imagePreview ? (
+            <div className="relative inline-block">
+              <img src={imagePreview} alt="미리보기" className="max-h-48 rounded-lg border border-border" />
+              <button
+                type="button"
+                onClick={removeImage}
+                className="absolute -top-2 -right-2 w-6 h-6 bg-black text-white rounded-full text-xs flex items-center justify-center hover:bg-gray-700"
+              >
+                ✕
+              </button>
+              <p className="text-xs text-muted mt-1">{imageFile?.name} ({(imageFile!.size / 1024).toFixed(0)}KB)</p>
+            </div>
+          ) : (
+            <button
+              type="button"
+              onClick={() => fileInputRef.current?.click()}
+              className="flex items-center gap-2 px-4 py-3 border border-dashed border-gray-300 rounded-lg text-sm text-muted hover:border-black hover:text-primary transition-colors w-full justify-center"
+            >
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
+                <circle cx="8.5" cy="8.5" r="1.5" />
+                <polyline points="21 15 16 10 5 21" />
+              </svg>
+              이미지 첨부 (최대 2MB)
+            </button>
+          )}
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/*"
+            onChange={handleImageSelect}
+            className="hidden"
+          />
+        </div>
+
         <div className="flex items-center gap-3 pt-4">
           <button
             type="submit"
             disabled={loading}
             className="bg-black text-white px-6 py-2.5 rounded-full text-sm font-medium hover:bg-gray-800 transition-colors disabled:opacity-50"
           >
-            {loading ? '게시 중...' : '게시하기'}
+            {uploadingImage ? '이미지 업로드 중...' : loading ? '게시 중...' : '게시하기'}
           </button>
           <button
             type="button"
