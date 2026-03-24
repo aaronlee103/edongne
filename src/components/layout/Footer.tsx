@@ -3,8 +3,10 @@
 import Link from 'next/link'
 import { useState } from 'react'
 import { createClient } from '@/lib/supabase-client'
+import { useRegion } from '@/context/RegionContext'
 
 export default function Footer() {
+  const { region } = useRegion()
   const [email, setEmail] = useState('')
   const [subMsg, setSubMsg] = useState('')
   const [submitting, setSubmitting] = useState(false)
@@ -64,7 +66,7 @@ export default function Footer() {
           <div>
             <h4 className="font-semibold mb-3">이동네</h4>
             <p className="text-muted leading-relaxed">
-              뉴욕·뉴저지 한인 커뮤니티<br />
+              {region.subtitle}<br />
               부동산 · 건축 · 법률 · 융자
             </p>
             <p className="text-muted mt-2 text-xs">
