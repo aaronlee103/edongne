@@ -145,7 +145,7 @@ export default function RealtorsPage() {
           {paged.map((realtor: any) => {
             const avg = getAvgRating(realtor.reviews);
             return (
-              <Link href={`/businesses/${realtor.id}`} key={realtor.id}>
+              <Link href={`/business/${realtor.id}`} key={realtor.id}>
                 <div className="border rounded-xl overflow-hidden hover:shadow-lg transition cursor-pointer bg-white">
                   {realtor.hero_image && (
                     <div className="w-full h-48 overflow-hidden">

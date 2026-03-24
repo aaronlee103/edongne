@@ -175,7 +175,7 @@ export default function BusinessesContent() {
           {paged.map((biz: any) => {
             const avg = getAvgRating(biz.reviews);
             return (
-              <Link href={`/businesses/${biz.id}`} key={biz.id}>
+              <Link href={`/business/${biz.id}`} key={biz.id}>
                 <div className="border rounded-xl overflow-hidden hover:shadow-lg transition cursor-pointer bg-white">
                   {biz.hero_image && (
                     <div className="w-full h-48 overflow-hidden">
