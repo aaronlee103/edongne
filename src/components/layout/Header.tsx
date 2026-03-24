@@ -1,9 +1,10 @@
 'use client'
 
 import Link from 'next/link'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useSearchParams, usePathname, useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase-client'
+import { useRegion } from '@/context/RegionContext'
 
 const NAV_ITEMS = [
   { href: '/board', label: '커뮤니티' },
@@ -30,11 +31,14 @@ export default function Header() {
   const [role, setRole] = useState<string>('user')
   const [searchOpen, setSearchOpen] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
+  const [regionOpen, setRegionOpen] = useState(false)
+  const regionRef = useRef<HTMLDivElement>(null)
   const supabase = createClient()
   const searchParams = useSearchParams()
   const pathname = usePathname()
   const router = useRouter()
   const currentCategory = searchParams.get('category') || 'all'
+  const { region, setRegionCode, allRegions } = useRegion()
 
   async function fetchRole(uid: string) {
     const { data } = await supabase
@@ -62,6 +66,17 @@ export default function Header() {
     return () => subscription.unsubscribe()
   }, [])
 
+  // Close region dropdown on outside click
+  useEffect(() => {
+    function handleClickOutside(e: MouseEvent) {
+      if (regionRef.current && !regionRef.current.contains(e.target as Node)) {
+        setRegionOpen(false)
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [])
+
   const handleLogout = async () => {
     await supabase.auth.signOut()
     setUser(null)
@@ -81,9 +96,40 @@ export default function Header() {
     <header className="border-b border-border sticky top-0 bg-white z-50">
       <div className="max-w-6xl mx-auto px-4">
         <div className="flex items-center justify-between h-14">
-          <Link href="/" className="text-xl font-bold tracking-tight">
-            이동네
-          </Link>
+          <div className="flex items-center gap-1.5">
+            <Link href="/" className="text-xl font-bold tracking-tight">
+              이동네
+            </Link>
+            <div className="relative" ref={regionRef}>
+              <button
+                onClick={() => setRegionOpen(!regionOpen)}
+                className="flex items-center gap-0.5 text-xs text-muted hover:text-primary transition-colors px-1.5 py-0.5 rounded hover:bg-gray-50"
+              >
+                <span>{region.name_ko}</span>
+                <svg className={`w-3 h-3 transition-transform ${regionOpen ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                </svg>
+              </button>
+              {regionOpen && (
+                <div className="absolute top-full left-0 mt-1 bg-white border border-border rounded-lg shadow-lg py-1 z-50 min-w-[160px]">
+                  {allRegions.filter(r => r.active).map((r) => (
+                    <button
+                      key={r.code}
+                      onClick={() => { setRegionCode(r.code); setRegionOpen(false) }}
+                      className={`w-full text-left px-3 py-1.5 text-sm hover:bg-gray-50 transition-colors ${
+                        r.code === region.code ? 'font-medium text-primary bg-gray-50' : 'text-secondary'
+                      }`}
+                    >
+                      {r.name_ko}
+                    </button>
+                  ))}
+                  <div className="border-t border-border mt-1 pt-1 px-3 py-1.5">
+                    <span className="text-xs text-muted">더 많은 지역이 곧 오픈됩니다</span>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
 
           <nav className="hidden md:flex items-center gap-6">
             {NAV_ITEMS.map((item) => (
