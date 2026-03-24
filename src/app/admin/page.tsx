@@ -9,7 +9,7 @@ export default function AdminDashboard() {
   const [stats, setStats] = useState({ posts: 0, users: 0, businesses: 0, reports: 0 })
   const [recentPosts, setRecentPosts] = useState<any[]>([])
   const [viewStats, setViewStats] = useState({ today: 0, week: 0, total: 0 })
-  const [topPages, setTopPages] = useState<{ path: string; count: number }[]>([])
+  const [topPages, setTopPages] = useState<{ path: string; label: string; count: number }[]>([])
 
   useEffect(() => {
     fetchStats()
@@ -64,6 +64,26 @@ export default function AdminDashboard() {
 
     // 인기 페이지 집계 (고유 방문자 기준)
     if (topRes.data) {
+      const PATH_LABELS: Record<string, string> = {
+        '/': '메인 페이지',
+        '/realtors': '부동산/리얼터',
+        '/builders': '건축/인테리어',
+        '/lawyers': '변호사',
+        '/mortgage': '융자',
+        '/businesses': '업체 디렉토리',
+        '/board': '커뮤니티 게시판',
+        '/listings': '부동산 매물',
+        '/mypage': '마이페이지',
+        '/auth': '로그인',
+        '/write': '글쓰기',
+        '/pricing': '요금제',
+        '/contact': '문의',
+        '/about': '소개',
+        '/business-register': '업체 등록',
+        '/privacy': '개인정보처리방침',
+        '/admin': '관리자',
+      }
+
       const pathVisitors: Record<string, Set<string>> = {}
       topRes.data.forEach((row: any) => {
         if (!pathVisitors[row.path]) pathVisitors[row.path] = new Set()
@@ -72,7 +92,53 @@ export default function AdminDashboard() {
       const sorted = Object.entries(pathVisitors)
         .sort((a, b) => b[1].size - a[1].size)
         .slice(0, 10)
-        .map(([path, visitors]) => ({ path, count: visitors.size }))
+        .map(([path, visitors]) => ({ path, label: '', count: visitors.size }))
+
+      // /post/uuid 경로에서 글 제목 가져오기
+      const postIds = sorted
+        .filter(p => p.path.startsWith('/post/'))
+        .map(p => p.path.replace('/post/', ''))
+      if (postIds.length > 0) {
+        const { data: posts } = await supabase
+          .from('posts')
+          .select('id, title')
+          .in('id', postIds)
+        const titleMap: Record<string, string> = {}
+        posts?.forEach((p: any) => { titleMap[p.id] = p.title })
+        sorted.forEach(page => {
+          if (page.path.startsWith('/post/')) {
+            const id = page.path.replace('/post/', '')
+            page.label = titleMap[id] || page.path
+          }
+        })
+      }
+
+      // /business/uuid 경로에서 업체명 가져오기
+      const bizIds = sorted
+        .filter(p => p.path.startsWith('/business/'))
+        .map(p => p.path.replace('/business/', ''))
+      if (bizIds.length > 0) {
+        const { data: bizs } = await supabase
+          .from('businesses')
+          .select('id, kor_name')
+          .in('id', bizIds)
+        const nameMap: Record<string, string> = {}
+        bizs?.forEach((b: any) => { nameMap[b.id] = b.kor_name })
+        sorted.forEach(page => {
+          if (page.path.startsWith('/business/')) {
+            const id = page.path.replace('/business/', '')
+            page.label = nameMap[id] || page.path
+          }
+        })
+      }
+
+      // 정적 경로 라벨 적용
+      sorted.forEach(page => {
+        if (!page.label) {
+          page.label = PATH_LABELS[page.path] || page.path
+        }
+      })
+
       setTopPages(sorted)
     }
   }
@@ -128,7 +194,7 @@ export default function AdminDashboard() {
                 <div key={page.path} className="flex items-center justify-between text-sm py-1.5 px-2 rounded hover:bg-gray-50">
                   <span className="truncate flex-1">
                     <span className="text-muted mr-2">{i + 1}.</span>
-                    {page.path === '/' ? '메인 페이지' : page.path}
+                    <Link href={page.path} className="hover:underline">{page.label}</Link>
                   </span>
                   <span className="text-muted text-xs ml-2 shrink-0">{page.count}회</span>
                 </div>
