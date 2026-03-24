@@ -43,6 +43,7 @@ export default function EditPostPage() {
   const [uploading, setUploading] = useState(false)
   const [user, setUser] = useState<any>(null)
   const [published, setPublished] = useState(true)
+  const [publishDate, setPublishDate] = useState('')
   const fileInputRef = useRef<HTMLInputElement>(null)
   const contentRef = useRef<HTMLTextAreaElement>(null)
 
@@ -95,6 +96,12 @@ export default function EditPostPage() {
     setThumbnail(post.thumbnail || '')
     setTags(post.tags?.join(', ') || '')
     setPublished(post.published !== false)
+    // 기존 날짜를 로컬 시간 기준 datetime-local 형식으로 변환
+    if (post.created_at) {
+      const d = new Date(post.created_at)
+      const local = new Date(d.getTime() - d.getTimezoneOffset() * 60000)
+      setPublishDate(local.toISOString().slice(0, 16))
+    }
     setLoading(false)
   }
 
@@ -137,6 +144,9 @@ export default function EditPostPage() {
       updateData.thumbnail = thumbnail || null
       const tagArray = tags.split(',').map(t => t.trim()).filter(Boolean)
       updateData.tags = tagArray.length > 0 ? tagArray : null
+      if (publishDate) {
+        updateData.created_at = new Date(publishDate).toISOString()
+      }
     }
 
     const { error } = await supabase
@@ -281,6 +291,20 @@ export default function EditPostPage() {
               placeholder="부동산, 뉴욕, 2025전망"
               className="w-full px-4 py-2 border border-border rounded-lg text-sm focus:outline-none focus:border-black"
             />
+          </div>
+        )}
+
+        {/* 발행일 (매거진만) */}
+        {isMagazine && (
+          <div>
+            <label className="block text-sm font-medium mb-1.5">발행일</label>
+            <input
+              type="datetime-local"
+              value={publishDate}
+              onChange={e => setPublishDate(e.target.value)}
+              className="w-full md:w-64 px-4 py-2 border border-border rounded-lg text-sm focus:outline-none focus:border-black"
+            />
+            <p className="text-xs text-muted mt-1">날짜를 변경하면 글 목록에서의 위치가 바뀝니다</p>
           </div>
         )}
 
