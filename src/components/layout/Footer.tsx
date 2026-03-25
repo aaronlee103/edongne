@@ -91,7 +91,6 @@ export default function Footer() {
               <li><Link href="/board" className="hover:text-primary">자유게시판</Link></li>
               <li><Link href="/board?cat=qna" className="hover:text-primary">질문답변</Link></li>
               <li><Link href="/board?cat=buysell" className="hover:text-primary">사고팔고</Link></li>
-              <li><Link href="/board?cat=jobs" className="hover:text-primary">구인구직</Link></li>
             </ul>
           </div>
           <div>
