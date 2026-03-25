@@ -11,14 +11,13 @@ const CATEGORIES = [
   { key: 'qna', label: '질문답변' },
   { key: 'info', label: '정보' },
   { key: 'buysell', label: '사고팔고' },
-  { key: 'jobs', label: '구인구직' },
   { key: 'housing', label: '렌트/룸메' },
 ]
 
 // 매물 페이지 링크 (별도 페이지로 이동)
 const LISTING_TABS = [
   { label: '매매', href: '/listings?type=sale' },
-  { label: '렌트매물', href: '/listings?type=rent' },
+  { label: '레트매물', href: '/listings?type=rent' },
 ]
 
 export default function BoardPage() {
@@ -40,6 +39,7 @@ export default function BoardPage() {
       .select('*, votes(value), comments(id)')
       .eq('type', 'community')
       .or('published.is.null,published.eq.true')
+      .or(`region.eq.${regionCode},region.eq.all,region.is.null`)
       .order('created_at', { ascending: false })
       .limit(20)
 
