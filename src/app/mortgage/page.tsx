@@ -1,71 +1,125 @@
 'use client'
 
-import { useState, useEffect } from 'react'
-import Link from 'next/link'
+import { useEffect, useState, useMemo } from 'react'
 import { createClient } from '@/lib/supabase-client'
+import { useRegion } from '@/context/RegionContext'
+import Link from 'next/link'
+
+const PER_PAGE = 30
+const DEFAULT_REGION = 'ny'
+
+function getBusinessRegionCodes(regionCode: string): string[] {
+  if (regionCode === DEFAULT_REGION) return ['NY', 'NJ']
+  return [regionCode.toUpperCase()]
+}
 
 export default function MortgagePage() {
-  const supabase = createClient()
-  const [region, setRegion] = useState('전체')
-  const [search, setSearch] = useState('')
   const [items, setItems] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
+  const [currentPage, setCurrentPage] = useState(1)
+  const [selectedArea, setSelectedArea] = useState('전체')
+  const [searchQuery, setSearchQuery] = useState('')
+  const { regionCode } = useRegion()
 
-  useEffect(() => { fetchItems() }, [region])
+  useEffect(() => {
+    const fetchItems = async () => {
+      setLoading(true)
+      const supabase = createClient()
+      const codes = getBusinessRegionCodes(regionCode)
+      const { data } = await supabase
+        .from('businesses')
+        .select('*, reviews(score)')
+        .eq('type', 'mortgage')
+        .in('region', codes)
+        .or('status.is.null,status.eq.active')
+        .or('published.is.null,published.eq.true')
+        .order('created_at', { ascending: false })
+      if (data) setItems(data)
+      setLoading(false)
+    }
+    fetchItems()
+  }, [regionCode])
 
-  async function fetchItems() {
-    setLoading(true)
-    let query = supabase.from('businesses').select('*').eq('type', 'mortgage').or('status.is.null,status.eq.active').or('published.is.null,published.eq.true').order('kor_name')
-    if (region !== '전체') query = query.eq('region', region)
-    const { data } = await query
-    if (data) setItems(data)
-    setLoading(false)
+  const areas = useMemo(() => {
+    return [...new Set(items.map(b => b.area).filter(Boolean))].sort()
+  }, [items])
+
+  const filtered = items.filter(b => {
+    if (selectedArea !== '전체' && b.area !== selectedArea) return false
+    if (searchQuery) {
+      const q = searchQuery.toLowerCase()
+      return b.kor_name?.toLowerCase().includes(q) ||
+             b.eng_name?.toLowerCase().includes(q) ||
+             b.area?.toLowerCase().includes(q) ||
+             b.specialty?.toLowerCase().includes(q)
+    }
+    return true
+  })
+
+  const totalPages = Math.ceil(filtered.length / PER_PAGE)
+  const paged = filtered.slice((currentPage - 1) * PER_PAGE, currentPage * PER_PAGE)
+
+  const getAvgRating = (reviews: any[]) => {
+    if (!reviews || reviews.length === 0) return null
+    return (reviews.reduce((sum: number, r: any) => sum + r.score, 0) / reviews.length).toFixed(1)
   }
 
-  const filtered = search
-    ? items.filter(b => b.kor_name?.includes(search) || b.eng_name?.toLowerCase().includes(search.toLowerCase()) || b.area?.includes(search))
-    : items
+  if (loading) return <div className="text-center py-20 text-gray-400">로딩 중...</div>
 
   return (
-    <div className="max-w-6xl mx-auto px-4 py-8">
-      <div className="mb-8">
-        <h1 className="text-2xl font-bold mb-1">융자/모기지</h1>
-        <p className="text-muted text-sm">뉴욕·뉴저지 한인 융자 전문가 {items.length}개</p>
-      </div>
-      <div className="flex gap-2 mb-6">
-        {['전체', 'NY', 'NJ'].map((r) => (
-          <button key={r} onClick={() => setRegion(r)} className={`px-3 py-1.5 text-sm rounded-full transition-colors ${region === r ? 'bg-black text-white' : 'bg-gray-100 text-secondary hover:bg-gray-200'}`}>{r}</button>
-        ))}
-      </div>
-      <input type="text" value={search} onChange={e => setSearch(e.target.value)} placeholder="업체명, 지역으로 검색..." className="w-full md:w-96 px-4 py-2 border border-border rounded-lg text-sm mb-6 focus:outline-none focus:border-black" />
-      {loading ? (
-        <p className="text-center py-12 text-muted text-sm">불러오는 중...</p>
-      ) : (
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {filtered.map((b) => (
-            <Link key={b.id} href={`/business/${b.id}`} className="flex border border-border rounded-lg hover:shadow-md transition-all overflow-hidden">
-              <div className="flex-1 p-4">
-                <div className="flex items-start justify-between mb-2">
-                  <div>
-                    <h3 className="font-semibold text-sm">{b.kor_name}</h3>
-                    <p className="text-xs text-muted">{b.eng_name}</p>
-                  </div>
-                  {b.plan !== 'basic' && <span className={`text-xs px-1.5 py-0.5 rounded ${b.plan === 'premium' ? 'bg-black text-white' : 'bg-gray-200'}`}>{b.plan?.toUpperCase()}</span>}
-                </div>
-                {b.tagline && <p className="text-xs text-primary mb-2 line-clamp-1">{b.tagline}</p>}
-                <div className="space-y-1 text-xs text-secondary">
-                  {b.region && b.area && <p>📍 {b.region} · {b.area}</p>}
-                  {b.phone1 && <p>📞 {b.phone1}</p>}
-                  {b.specialty && <p>💰 {b.specialty}</p>}
-                </div>
-              </div>
-              {b.hero_image && (
-                <div className="w-24 h-24 m-3 flex-shrink-0">
-                  <img src={b.hero_image} alt={b.kor_name} className="w-full h-full object-cover rounded-lg" />
-                </div>
-              )}
-            </Link>
+    <div className="max-w-7xl mx-auto px-4 py-10">
+      <h1 className="text-2xl font-bold mb-1">융자/모기지</h1>
+      <p className="text-sm text-gray-500 mb-6">한인 융자 전문가 {filtered.length}명</p>
+
+      {areas.length > 0 && (
+        <div className="flex flex-wrap gap-2 mb-4">
+          <button onClick={() => { setSelectedArea('전체'); setCurrentPage(1) }} className={`px-3 py-1.5 rounded-full text-xs font-medium transition ${selectedArea === '전체' ? 'bg-green-600 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}>전체</button>
+          {areas.map((area: string) => (
+            <button key={area} onClick={() => { setSelectedArea(area); setCurrentPage(1) }} className={`px-3 py-1.5 rounded-full text-xs font-medium transition ${selectedArea === area ? 'bg-green-600 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}>{area}</button>
           ))}
+        </div>
+      )}
+
+      <div className="mb-6">
+        <input type="text" placeholder="이름, 지역, 전문분야 검색..." value={searchQuery} onChange={(e) => { setSearchQuery(e.target.value); setCurrentPage(1) }} className="w-full md:w-80 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" />
+      </div>
+
+      {paged.length === 0 ? (
+        <div className="text-center py-20 text-gray-400">검색 결과가 없습니다.</div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {paged.map((b: any) => {
+            const avg = getAvgRating(b.reviews)
+            return (
+              <Link href={`/business/${b.id}`} key={b.id}>
+                <div className="border rounded-xl overflow-hidden hover:shadow-lg transition cursor-pointer bg-white">
+                  {b.hero_image && (
+                    <div className="w-full h-48 overflow-hidden">
+                      <img src={b.hero_image} alt={b.kor_name} className="w-full h-full object-cover" />
+                    </div>
+                  )}
+                  <div className="p-4">
+                    <h2 className="text-lg font-semibold">{b.kor_name}</h2>
+                    {b.eng_name && <p className="text-sm text-gray-500">{b.eng_name}</p>}
+                    <p className="text-sm text-gray-600 mt-1">{b.region}{b.area ? ` · ${b.area}` : ''}</p>
+                    {b.specialty && <p className="text-sm text-blue-600 mt-1">{b.specialty}</p>}
+                    <div className="flex items-center justify-between mt-2">
+                      {avg && <span className="text-sm text-yellow-500 font-medium">★ {avg}</span>}
+                      {b.phone1 && <span className="text-sm text-gray-500">{b.phone1}</span>}
+                    </div>
+                  </div>
+                </div>
+              </Link>
+            )
+          })}
+        </div>
+      )}
+
+      {totalPages > 1 && (
+        <div className="flex justify-center items-center gap-2 mt-10">
+          <button onClick={() => setCurrentPage(p => Math.max(1, p - 1))} disabled={currentPage === 1} className="px-3 py-1 rounded bg-gray-200 disabled:opacity-50">이전</button>
+          <span className="text-sm text-gray-600">{currentPage} / {totalPages}</span>
+          <button onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))} disabled={currentPage === totalPages} className="px-3 py-1 rounded bg-gray-200 disabled:opacity-50">다음</button>
         </div>
       )}
     </div>
