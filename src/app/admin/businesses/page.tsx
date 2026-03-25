@@ -1,16 +1,162 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { createClient } from '@/lib/supabase-client'
 import { uploadImage } from '@/lib/upload'
 
-const TYPES: Record<string, string> = { realtor: '부동산', builder: '건축', lawyer: '변호사', mortgage: '융자' }
+const TYPES: Record<string, string> = { realtor: '부동산', builder: '건축', lawyer: '변호사', mortgage: '융자', mover: '이사' }
 const PLAN_OPTIONS = ['basic', 'pro', 'premium']
 const STATUS_OPTIONS = ['active', 'pending', 'suspended']
 
+// ─── 유저 검색 컴포넌트 (소유자 지정용) ───
+function UserSearch({ supabase, currentUserId, onSelect, onClear }: {
+  supabase: any
+  currentUserId: string | null
+  onSelect: (user: any) => void
+  onClear: () => void
+}) {
+  const [currentUser, setCurrentUser] = useState<any>(null)
+  const [searching, setSearching] = useState(false)
+  const [query, setQuery] = useState('')
+  const [results, setResults] = useState<any[]>([])
+  const [showSearch, setShowSearch] = useState(false)
+  const debounceRef = useRef<NodeJS.Timeout | null>(null)
+  const wrapperRef = useRef<HTMLDivElement>(null)
+
+  // 현재 소유자 정보 로드
+  useEffect(() => {
+    if (!currentUserId) { setCurrentUser(null); return }
+    supabase.from('users').select('id, nickname, email, created_at').eq('id', currentUserId).single()
+      .then(({ data }: any) => { if (data) setCurrentUser(data) })
+  }, [currentUserId])
+
+  // 바깥 클릭 시 드롭다운 닫기
+  useEffect(() => {
+    function handleClick(e: MouseEvent) {
+      if (wrapperRef.current && !wrapperRef.current.contains(e.target as Node)) {
+        setShowSearch(false)
+      }
+    }
+    document.addEventListener('mousedown', handleClick)
+    return () => document.removeEventListener('mousedown', handleClick)
+  }, [])
+
+  // 검색 (디바운스 300ms)
+  useEffect(() => {
+    if (debounceRef.current) clearTimeout(debounceRef.current)
+    if (!query.trim()) { setResults([]); return }
+    debounceRef.current = setTimeout(async () => {
+      setSearching(true)
+      const q = query.trim()
+      const { data } = await supabase
+        .from('users')
+        .select('id, nickname, email, created_at')
+        .or(`email.ilike.%${q}%,nickname.ilike.%${q}%`)
+        .order('created_at', { ascending: false })
+        .limit(10)
+      if (data) setResults(data)
+      setSearching(false)
+    }, 300)
+  }, [query])
+
+  function handleSelect(user: any) {
+    onSelect(user)
+    setCurrentUser(user)
+    setShowSearch(false)
+    setQuery('')
+    setResults([])
+  }
+
+  function handleClear() {
+    onClear()
+    setCurrentUser(null)
+    setShowSearch(false)
+  }
+
+  function formatDate(d: string) {
+    return new Date(d).toLocaleDateString('ko-KR', { month: 'short', day: 'numeric' })
+  }
+
+  return (
+    <div className="border border-border rounded-lg p-3 bg-gray-50/50">
+      <label className="block text-xs font-medium text-muted mb-2">소유자</label>
+
+      {currentUser ? (
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <div className="w-7 h-7 rounded-full bg-black text-white flex items-center justify-center text-xs font-bold">
+              {currentUser.nickname?.charAt(0) || '?'}
+            </div>
+            <div>
+              <span className="text-sm font-medium">{currentUser.nickname}</span>
+              <span className="text-xs text-muted ml-2">{currentUser.email}</span>
+            </div>
+          </div>
+          <div className="flex gap-1.5">
+            <button type="button" onClick={() => { setShowSearch(true); setQuery('') }}
+              className="text-xs px-2 py-1 rounded bg-gray-200 text-secondary hover:bg-gray-300">변경</button>
+            <button type="button" onClick={handleClear}
+              className="text-xs px-2 py-1 rounded bg-red-50 text-red-500 hover:bg-red-100">해제</button>
+          </div>
+        </div>
+      ) : (
+        <div className="flex items-center justify-between">
+          <span className="text-sm text-muted">미지정</span>
+          <button type="button" onClick={() => setShowSearch(true)}
+            className="text-xs px-2.5 py-1 rounded bg-black text-white hover:bg-gray-800">소유자 지정</button>
+        </div>
+      )}
+
+      {showSearch && (
+        <div ref={wrapperRef} className="mt-2 relative">
+          <input
+            type="text"
+            value={query}
+            onChange={e => setQuery(e.target.value)}
+            placeholder="이메일 또는 닉네임으로 검색..."
+            className="w-full border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-black"
+            autoFocus
+          />
+          {searching && <div className="absolute right-3 top-2.5 text-xs text-muted">검색중...</div>}
+
+          {results.length > 0 && (
+            <div className="absolute z-10 left-0 right-0 mt-1 bg-white border border-border rounded-lg shadow-lg max-h-48 overflow-y-auto">
+              {results.map(user => (
+                <button
+                  key={user.id}
+                  type="button"
+                  onClick={() => handleSelect(user)}
+                  className="w-full text-left px-3 py-2 hover:bg-gray-50 border-b border-border last:border-0 flex items-center gap-2"
+                >
+                  <div className="w-6 h-6 rounded-full bg-gray-200 flex items-center justify-center text-xs font-bold shrink-0">
+                    {user.nickname?.charAt(0) || '?'}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="text-sm font-medium truncate">{user.nickname}</div>
+                    <div className="text-xs text-muted truncate">{user.email}</div>
+                  </div>
+                  <span className="text-xs text-muted shrink-0">가입 {formatDate(user.created_at)}</span>
+                </button>
+              ))}
+            </div>
+          )}
+
+          {query.trim() && !searching && results.length === 0 && (
+            <div className="absolute z-10 left-0 right-0 mt-1 bg-white border border-border rounded-lg shadow-lg px-3 py-3 text-center text-sm text-muted">
+              검색 결과가 없습니다
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  )
+}
+
+// ─── 메인 페이지 ───
 export default function AdminBusinessesPage() {
   const supabase = createClient()
   const [businesses, setBusinesses] = useState<any[]>([])
+  const [usersMap, setUsersMap] = useState<Record<string, any>>({})
   const [loading, setLoading] = useState(true)
   const [filter, setFilter] = useState('all')
   const [showAdd, setShowAdd] = useState(false)
@@ -20,10 +166,22 @@ export default function AdminBusinessesPage() {
 
   async function fetchBusinesses() {
     setLoading(true)
-    let query = supabase.from('businesses').select('*').order('created_at', { ascending: false }).limit(100)
+    let query = supabase.from('businesses').select('*').order('created_at', { ascending: false }).limit(200)
     if (filter !== 'all') query = query.eq('type', filter)
     const { data } = await query
-    if (data) setBusinesses(data)
+    if (data) {
+      setBusinesses(data)
+      // 소유자 정보 한번에 로드
+      const userIds = [...new Set(data.map((b: any) => b.user_id).filter(Boolean))]
+      if (userIds.length > 0) {
+        const { data: users } = await supabase.from('users').select('id, nickname, email').in('id', userIds)
+        if (users) {
+          const map: Record<string, any> = {}
+          users.forEach((u: any) => { map[u.id] = u })
+          setUsersMap(map)
+        }
+      }
+    }
     setLoading(false)
   }
 
@@ -59,7 +217,7 @@ export default function AdminBusinessesPage() {
       {showAdd && <AddBusinessForm supabase={supabase} onAdd={() => { fetchBusinesses(); setShowAdd(false) }} />}
 
       <div className="flex gap-2 mb-4">
-        {[['all', '전체'], ['realtor', '부동산'], ['builder', '건축'], ['lawyer', '변호사'], ['mortgage', '융자']].map(([k, l]) => (
+        {[['all', '전체'], ['realtor', '부동산'], ['builder', '건축'], ['lawyer', '변호사'], ['mortgage', '융자'], ['mover', '이사']].map(([k, l]) => (
           <button
             key={k}
             onClick={() => setFilter(k)}
@@ -76,11 +234,11 @@ export default function AdminBusinessesPage() {
             <tr>
               <th className="text-left px-4 py-2 font-medium text-muted">업체명</th>
               <th className="text-left px-4 py-2 font-medium text-muted w-20">유형</th>
+              <th className="text-left px-4 py-2 font-medium text-muted w-28">소유자</th>
               <th className="text-left px-4 py-2 font-medium text-muted w-16">지역</th>
               <th className="text-left px-4 py-2 font-medium text-muted w-24">플랜</th>
               <th className="text-left px-4 py-2 font-medium text-muted w-24">상태</th>
               <th className="text-left px-4 py-2 font-medium text-muted w-16">공개</th>
-              <th className="text-left px-4 py-2 font-medium text-muted w-28">전화</th>
               <th className="text-left px-4 py-2 font-medium text-muted w-24">관리</th>
             </tr>
           </thead>
@@ -96,6 +254,16 @@ export default function AdminBusinessesPage() {
                   {b.eng_name && <div className="text-xs text-muted">{b.eng_name}</div>}
                 </td>
                 <td className="px-4 py-2.5 text-xs">{TYPES[b.type] || b.type}</td>
+                <td className="px-4 py-2.5">
+                  {b.user_id && usersMap[b.user_id] ? (
+                    <div>
+                      <div className="text-xs font-medium">{usersMap[b.user_id].nickname}</div>
+                      <div className="text-xs text-muted truncate max-w-[100px]">{usersMap[b.user_id].email}</div>
+                    </div>
+                  ) : (
+                    <span className="text-xs text-gray-400">미지정</span>
+                  )}
+                </td>
                 <td className="px-4 py-2.5 text-xs text-muted">{b.region}</td>
                 <td className="px-4 py-2.5">
                   <select
@@ -133,7 +301,6 @@ export default function AdminBusinessesPage() {
                     {b.published === false ? '비공개' : '공개'}
                   </button>
                 </td>
-                <td className="px-4 py-2.5 text-xs text-muted">{b.phone1}</td>
                 <td className="px-4 py-2.5">
                   <div className="flex gap-2">
                     <button onClick={() => setEditId(editId === b.id ? null : b.id)} className="text-xs text-blue-600 hover:underline">수정</button>
@@ -159,6 +326,7 @@ export default function AdminBusinessesPage() {
   )
 }
 
+// ─── 수정 모달 ───
 function EditBusinessModal({ supabase, business, onClose, onSave }: { supabase: any; business: any; onClose: () => void; onSave: () => void }) {
   const [form, setForm] = useState({
     kor_name: business.kor_name || '',
@@ -175,6 +343,7 @@ function EditBusinessModal({ supabase, business, onClose, onSave }: { supabase: 
     plan: business.plan || 'basic',
     status: business.status || 'active',
   })
+  const [ownerId, setOwnerId] = useState<string | null>(business.user_id || null)
   const [heroImage, setHeroImage] = useState<string | null>(business.hero_image || null)
   const [portfolio, setPortfolio] = useState<{ url: string; caption: string }[]>(business.portfolio || [])
   const [saving, setSaving] = useState(false)
@@ -222,6 +391,7 @@ function EditBusinessModal({ supabase, business, onClose, onSave }: { supabase: 
     setSaving(true)
     const { error } = await supabase.from('businesses').update({
       ...form,
+      user_id: ownerId,
       hero_image: heroImage,
       portfolio: portfolio.length > 0 ? portfolio : null,
     }).eq('id', business.id)
@@ -242,6 +412,14 @@ function EditBusinessModal({ supabase, business, onClose, onSave }: { supabase: 
         </div>
 
         <form onSubmit={handleSave} className="space-y-4">
+          {/* 소유자 지정 */}
+          <UserSearch
+            supabase={supabase}
+            currentUserId={ownerId}
+            onSelect={(user) => setOwnerId(user.id)}
+            onClear={() => setOwnerId(null)}
+          />
+
           {/* 업종 & 플랜 & 상태 */}
           <div className="grid grid-cols-3 gap-3">
             <div>
@@ -249,6 +427,7 @@ function EditBusinessModal({ supabase, business, onClose, onSave }: { supabase: 
               <select value={form.type} onChange={e => update('type', e.target.value)} className="w-full border border-border rounded-lg px-3 py-2 text-sm">
                 <option value="realtor">부동산</option><option value="builder">건축</option>
                 <option value="lawyer">변호사</option><option value="mortgage">융자</option>
+                <option value="mover">이사</option>
               </select>
             </div>
             <div>
@@ -389,17 +568,21 @@ function EditBusinessModal({ supabase, business, onClose, onSave }: { supabase: 
   )
 }
 
+// ─── 업체 추가 폼 ───
 function AddBusinessForm({ supabase, onAdd }: { supabase: any; onAdd: () => void }) {
   const [form, setForm] = useState({
     type: 'realtor', kor_name: '', eng_name: '', phone1: '', region: 'NY', area: '', specialty: '', plan: 'basic'
   })
+  const [ownerId, setOwnerId] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!form.kor_name.trim()) return
     setLoading(true)
-    const { error } = await supabase.from('businesses').insert(form)
+    const insertData: any = { ...form }
+    if (ownerId) insertData.user_id = ownerId
+    const { error } = await supabase.from('businesses').insert(insertData)
     if (error) alert('추가 실패: ' + error.message)
     else onAdd()
     setLoading(false)
@@ -410,10 +593,22 @@ function AddBusinessForm({ supabase, onAdd }: { supabase: any; onAdd: () => void
   return (
     <form onSubmit={handleSubmit} className="border border-border rounded-lg p-4 mb-6 bg-bg-light">
       <h3 className="font-bold text-sm mb-3">업체 추가</h3>
+
+      {/* 소유자 지정 */}
+      <div className="mb-3">
+        <UserSearch
+          supabase={supabase}
+          currentUserId={ownerId}
+          onSelect={(user) => setOwnerId(user.id)}
+          onClear={() => setOwnerId(null)}
+        />
+      </div>
+
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
         <select value={form.type} onChange={e => update('type', e.target.value)} className="border border-border rounded px-2 py-1.5">
           <option value="realtor">부동산</option><option value="builder">건축</option>
           <option value="lawyer">변호사</option><option value="mortgage">융자</option>
+          <option value="mover">이사</option>
         </select>
         <input value={form.kor_name} onChange={e => update('kor_name', e.target.value)} placeholder="한글명 *" className="border border-border rounded px-2 py-1.5" required />
         <input value={form.eng_name} onChange={e => update('eng_name', e.target.value)} placeholder="영문명" className="border border-border rounded px-2 py-1.5" />
