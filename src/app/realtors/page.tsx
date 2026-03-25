@@ -2,19 +2,27 @@
 
 import { useEffect, useState, useMemo } from 'react';
 import { createClient } from '@/lib/supabase-client';
+import { useRegion } from '@/context/RegionContext';
 import Link from 'next/link';
 
 const DESKTOP_PER_PAGE = 30;
 const MOBILE_PER_PAGE = 15;
+const DEFAULT_REGION = 'ny';
+
+function getBusinessRegionCodes(regionCode: string): string[] {
+  if (regionCode === DEFAULT_REGION) return ['NY', 'NJ'];
+  return [regionCode.toUpperCase()];
+}
 
 export default function RealtorsPage() {
   const [realtors, setRealtors] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
-  const [selectedRegion, setSelectedRegion] = useState('전체');
+  const [selectedSubRegion, setSelectedSubRegion] = useState('전체');
   const [selectedArea, setSelectedArea] = useState('전체');
   const [searchQuery, setSearchQuery] = useState('');
   const [isMobile, setIsMobile] = useState(false);
+  const { regionCode } = useRegion();
 
   useEffect(() => {
     const checkMobile = () => setIsMobile(window.innerWidth < 768);
@@ -25,34 +33,37 @@ export default function RealtorsPage() {
 
   useEffect(() => {
     const fetchRealtors = async () => {
+      setLoading(true);
       const supabase = createClient();
+      const codes = getBusinessRegionCodes(regionCode);
       const { data, error } = await supabase
         .from('businesses')
         .select('*, reviews(score)')
         .eq('type', 'realtor')
+        .in('region', codes)
         .order('created_at', { ascending: false });
       if (!error && data) setRealtors(data);
       setLoading(false);
     };
     fetchRealtors();
-  }, []);
+  }, [regionCode]);
+
+  const subRegions = regionCode === DEFAULT_REGION ? ['전체', 'NY', 'NJ'] : [];
 
   const areas = useMemo(() => {
-    if (selectedRegion === '전체') return [];
-    const regionCode = selectedRegion === '뉴욕' ? 'NY' : 'NJ';
-    const regionData = realtors.filter((r: any) => r.region === regionCode);
-    return [...new Set(regionData.map((r: any) => r.area).filter(Boolean))].sort();
-  }, [selectedRegion, realtors]);
+    let data = realtors;
+    if (selectedSubRegion !== '전체') {
+      data = data.filter((r: any) => r.region === selectedSubRegion);
+    }
+    return [...new Set(data.map((r: any) => r.area).filter(Boolean))].sort();
+  }, [selectedSubRegion, realtors]);
 
   useEffect(() => {
     setSelectedArea('전체');
-  }, [selectedRegion]);
+  }, [selectedSubRegion]);
 
   const filtered = realtors.filter((r: any) => {
-    if (selectedRegion !== '전체') {
-      const regionCode = selectedRegion === '뉴욕' ? 'NY' : 'NJ';
-      if (r.region !== regionCode) return false;
-    }
+    if (selectedSubRegion !== '전체' && r.region !== selectedSubRegion) return false;
     if (selectedArea !== '전체' && r.area !== selectedArea) return false;
     if (searchQuery) {
       const q = searchQuery.toLowerCase();
@@ -80,25 +91,28 @@ export default function RealtorsPage() {
 
   return (
     <div className="max-w-7xl mx-auto px-4 py-10">
-      <h1 className="text-2xl font-bold mb-6">리얼터 디렉토리</h1>
+      <h1 className="text-2xl font-bold mb-1">리얼터 디렉토리</h1>
+      <p className="text-sm text-gray-500 mb-6">총 {filtered.length}명의 리얼터</p>
 
-      <div className="flex flex-wrap gap-2 mb-4">
-        {['전체', '뉴욕', '뉴저지'].map(region => (
-          <button
-            key={region}
-            onClick={() => { setSelectedRegion(region); setCurrentPage(1); }}
-            className={`px-4 py-2 rounded-full text-sm font-medium transition ${
-              selectedRegion === region
-                ? 'bg-blue-600 text-white'
-                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-            }`}
-          >
-            {region}
-          </button>
-        ))}
-      </div>
+      {subRegions.length > 0 && (
+        <div className="flex flex-wrap gap-2 mb-4">
+          {subRegions.map(region => (
+            <button
+              key={region}
+              onClick={() => { setSelectedSubRegion(region); setCurrentPage(1); }}
+              className={`px-4 py-2 rounded-full text-sm font-medium transition ${
+                selectedSubRegion === region
+                  ? 'bg-blue-600 text-white'
+                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+              }`}
+            >
+              {region === '전체' ? '전체' : region === 'NY' ? '뉴욕' : '뉴저지'}
+            </button>
+          ))}
+        </div>
+      )}
 
-      {selectedRegion !== '전체' && areas.length > 0 && (
+      {areas.length > 0 && (
         <div className="flex flex-wrap gap-2 mb-4">
           <button
             onClick={() => { setSelectedArea('전체'); setCurrentPage(1); }}
@@ -135,8 +149,6 @@ export default function RealtorsPage() {
           className="w-full md:w-80 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
         />
       </div>
-
-      <p className="text-sm text-gray-500 mb-4">총 {filtered.length}명의 리얼터</p>
 
       {paged.length === 0 ? (
         <div className="text-center py-20 text-gray-400">검색 결과가 없습니다.</div>
