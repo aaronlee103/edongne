@@ -15,6 +15,15 @@ const PROPERTY_TYPE_LABELS: Record<string, string> = {
   apartment: '아파트', commercial: '상업용', land: '토지', other: '기타',
 };
 
+const DEFAULT_REGION = 'ny'
+
+function regionFilter(regionCode: string): string {
+  if (regionCode === DEFAULT_REGION) {
+    return `region.eq.${regionCode},region.eq.all,region.is.null`
+  }
+  return `region.eq.${regionCode},region.eq.all`
+}
+
 export default function ListingsContent() {
   const supabase = createClient();
   const searchParams = useSearchParams();
@@ -38,7 +47,7 @@ export default function ListingsContent() {
       .select('*, users:user_id(nickname, avatar_url), businesses:business_id(name, plan)')
       .eq('type', type)
       .eq('status', 'active')
-      .or(`region.eq.${regionCode},region.eq.all,region.is.null`)
+      .or(regionFilter(regionCode))
       .order('created_at', { ascending: false });
 
     setListings(data || []);
@@ -97,7 +106,7 @@ export default function ListingsContent() {
               type === t ? 'bg-black text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
             }`}
           >
-            {t === 'sale' ? '매매' : '렌트'}
+            {t === 'sale' ? '맠매' : '렌트'}
           </button>
         ))}
       </div>
@@ -158,7 +167,7 @@ export default function ListingsContent() {
                           📷 {listing.photos.length}
                         </span>
                       )}
-                    </div>
+                  </div>
 
                     {/* 정보 */}
                     <div className="p-3">
@@ -174,7 +183,7 @@ export default function ListingsContent() {
                           <span>🛏 {listing.bedrooms === 0 ? '스튜디오' : `${listing.bedrooms}BR`}</span>
                         )}
                         {listing.bathrooms && <span>🚿 {listing.bathrooms}BA</span>}
-                        {listing.sqft && <span>📐 {listing.sqft}sqft</span>}
+                        {listing.sqft && <span>📐 t�isting.sqft}sqft</span>}
                         {listing.property_type && (
                           <span className="ml-auto text-gray-400">
                             {PROPERTY_TYPE_LABELS[listing.property_type] || listing.property_type}
@@ -228,7 +237,7 @@ export default function ListingsContent() {
               </button>
             </div>
           )}
-          <p className="text-center text-xs text-gray-400 mt-3">총 {sorted.length}개 매물</p>
+          <p className="text-center text-xs text-gray-400 mt-3">܇� {sorted.length}개 매물</p>
         </>
       )}
     </div>
