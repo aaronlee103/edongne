@@ -11,7 +11,6 @@ const CATEGORIES = [
   { key: 'qna', label: '질문답변' },
   { key: 'info', label: '정보' },
   { key: 'buysell', label: '사고팔고' },
-  { key: 'jobs', label: '구인구직' },
   { key: 'housing', label: '렌트/룸메' },
 ]
 
