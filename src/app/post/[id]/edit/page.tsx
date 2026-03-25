@@ -21,7 +21,7 @@ const MAGAZINE_CATEGORIES = [
   { key: 'living', label: '생활 정보' },
   { key: 'legal', label: '법률/비자' },
   { key: 'construction', label: '건축/인테리어' },
-  { key: 'finance', label: '주택융자' },
+  { key: 'finance', label: '주택윴자' },
   { key: 'topic', label: '맛집/문화' },
   { key: 'info', label: '뉴스' },
 ]
@@ -38,6 +38,7 @@ export default function EditPostPage() {
   const [content, setContent] = useState('')
   const [thumbnail, setThumbnail] = useState('')
   const [tags, setTags] = useState('')
+  const [region, setRegion] = useState('ny')
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [uploading, setUploading] = useState(false)
@@ -95,6 +96,7 @@ export default function EditPostPage() {
     setContent(post.content)
     setThumbnail(post.thumbnail || '')
     setTags(post.tags?.join(', ') || '')
+    setRegion(post.region || 'ny')
     setPublished(post.published !== false)
     // 기존 날짜를 로컬 시간 기준 datetime-local 형식으로 변환
     if (post.created_at) {
@@ -142,6 +144,7 @@ export default function EditPostPage() {
 
     if (isMagazine) {
       updateData.thumbnail = thumbnail || null
+      updateData.region = region
       const tagArray = tags.split(',').map(t => t.trim()).filter(Boolean)
       updateData.tags = tagArray.length > 0 ? tagArray : null
       if (publishDate) {
@@ -201,6 +204,39 @@ export default function EditPostPage() {
                 <option key={c.key} value={c.key}>{c.label}</option>
               ))}
             </select>
+          </div>
+        )}
+
+        {/* 공개 지역 (매거진만) */}
+        {isMagazine && (
+          <div>
+            <label className="block text-sm font-medium mb-1.5">공개 지역</label>
+            <div className="flex flex-wrap gap-2">
+              {[
+                { code: 'all', label: '전체' },
+                { code: 'ny', label: '뉴욕/뉴저지' },
+                { code: 'la', label: '로스앤젤레스' },
+                { code: 'dc', label: '워싱턴 DC' },
+                { code: 'seattle', label: '시애틀' },
+                { code: 'chicago', label: '시카고' },
+                { code: 'sf', label: '샌프란시스코' },
+                { code: 'atlanta', label: '애틀랜타' },
+                { code: 'philly', label: '필라델피아' },
+                { code: 'dallas', label: '달라스' },
+                { code: 'houston', label: '휴스턴' },
+                { code: 'hawaii', label: '하와이' },
+                { code: 'boston', label: '보스턴' },
+              ].map(r => (
+                <button
+                  key={r.code}
+                  type="button"
+                  onClick={() => setRegion(r.code)}
+                  className={`px-3 py-1 text-xs rounded-full ${region === r.code ? 'bg-black text-white' : 'bg-gray-100 text-secondary hover:bg-gray-200'}`}
+                >
+                  {r.label}
+                </button>
+              ))}
+            </div>
           </div>
         )}
 
@@ -304,7 +340,7 @@ export default function EditPostPage() {
               onChange={e => setPublishDate(e.target.value)}
               className="w-full md:w-64 px-4 py-2 border border-border rounded-lg text-sm focus:outline-none focus:border-black"
             />
-            <p className="text-xs text-muted mt-1">날짜를 변경하면 글 목록에서의 위치가 바뀝니다</p>
+            <p className="text-xs text-muted mt-1">날짜를 변경하메 글 목록에서의 위치가 바뀝니다</p>
           </div>
         )}
 
