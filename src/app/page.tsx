@@ -44,7 +44,7 @@ function HomeContent() {
   const [editorPicks, setEditorPicks] = useState<any[]>([])
   const [popularPosts, setPopularPosts] = useState<any[]>([])
   const [weeklyPopular, setWeeklyPopular] = useState<any[]>([])
-  const [businessCounts, setBusinessCounts] = useState({ realtor: 0, builder: 0, lawyer: 0, mortgage: 0 })
+  const [businessCounts, setBusinessCounts] = useState({ realtor: 0, builder: 0, lawyer: 0, mortgage: 0, mover: 0 })
   const [currentPage, setCurrentPage] = useState(1)
   const [searchTerm, setSearchTerm] = useState('')
   const [currentSlide, setCurrentSlide] = useState(0)
@@ -160,7 +160,7 @@ function HomeContent() {
   }
 
   async function fetchBusinessCounts() {
-    const types = ['realtor', 'builder', 'lawyer', 'mortgage'] as const
+    const types = ['realtor', 'builder', 'lawyer', 'mortgage', 'mover'] as const
     const counts: any = {}
     for (const t of types) {
       const { count } = await supabase.from('businesses').select('id', { count: 'exact', head: true }).eq('type', t)
@@ -181,7 +181,7 @@ function HomeContent() {
     return `${Math.floor(seconds / 86400)}일`
   }
 
-  // 에디터 픽 ID를 제왹한 나머지 글
+  // 에디터 픽 ID를 제외한 나머지 글
   const editorPickIds = new Set(editorPicks.map(p => p.id))
   const nonEditorPosts = allPosts.filter(p => !editorPickIds.has(p.id))
   // 슬라이드 아래 2개 카드
@@ -197,10 +197,10 @@ function HomeContent() {
   function stripMarkdown(text: string): string {
     return text
       .replace(/!\[[^\]]*\]\([^)]+\)/g, '')   // 이미지 제거
-      .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1') // 맀크 → 텍스트만
+      .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1') // 링크 → 텍스트만
       .replace(/^#{1,3}\s+/gm, '')              // 헤딩 제거
       .replace(/\*\*(.+?)\*\*/g, '$1')          // 볼드 제거
-      .replace(/\*(.+?)\*/g, '$1')              // 이탤릭 제거
+      .replace(/\*(.+?)\*/g, '$1')              // 이탈릭 제거
       .replace(/\n{2,}/g, ' ')                  // 줄바꿈 → 공백
       .trim()
   }
@@ -461,6 +461,7 @@ function HomeContent() {
               <DirectoryLink href="/builders" label="건축/인테리어" count={businessCounts.builder} />
               <DirectoryLink href="/lawyers" label="변호사" count={businessCounts.lawyer} />
               <DirectoryLink href="/mortgage" label="융자/모기지" count={businessCounts.mortgage} />
+              <DirectoryLink href="/movers" label="이사" count={businessCounts.mover} />
             </div>
 
             <div className="mt-8 p-4 bg-bg-light rounded-lg border border-border">
