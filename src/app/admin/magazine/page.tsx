@@ -22,6 +22,7 @@ export default function AdminMagazinePage() {
   const [posts, setPosts] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [showEditor, setShowEditor] = useState(false)
+  const [editingPost, setEditingPost] = useState<any>(null)
   const [filterCat, setFilterCat] = useState('all')
 
   useEffect(() => { fetchPosts() }, [filterCat])
@@ -58,7 +59,7 @@ export default function AdminMagazinePage() {
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-2xl font-bold">매거진 관리</h1>
         <button
-          onClick={() => setShowEditor(!showEditor)}
+          onClick={() => { setEditingPost(null); setShowEditor(!showEditor) }}
           className="bg-black text-white px-4 py-1.5 rounded-full text-sm hover:bg-gray-800"
         >
           {showEditor ? '목록 보기' : '+ 새 매거진 글'}
@@ -89,7 +90,8 @@ export default function AdminMagazinePage() {
       {showEditor ? (
         <MagazineEditor
           supabase={supabase}
-          onPublish={() => { setShowEditor(false); fetchPosts() }}
+          editingPost={editingPost}
+          onPublish={() => { setShowEditor(false); setEditingPost(null); fetchPosts() }}
         />
       ) : (
         <div className="space-y-3">
@@ -132,6 +134,7 @@ export default function AdminMagazinePage() {
                 >
                   {post.published === false ? '비공개' : '공개'}
                 </button>
+                <button onClick={() => { setEditingPost(post); setShowEditor(true) }} className="text-xs text-blue-500 hover:underline">수정</button>
                 <button onClick={() => deletePost(post.id)} className="text-xs text-red-500 hover:underline">삭제</button>
               </div>
             </div>
@@ -142,16 +145,16 @@ export default function AdminMagazinePage() {
   )
 }
 
-function MagazineEditor({ supabase, onPublish }: { supabase: any; onPublish: () => void }) {
-  const [type, setType] = useState<'magazine' | 'notice'>('magazine')
-  const [category, setCategory] = useState(MAGAZINE_CATEGORIES[0].key)
-  const [title, setTitle] = useState('')
-  const [content, setContent] = useState('')
-  const [thumbnail, setThumbnail] = useState('')
-  const [tags, setTags] = useState('')
+function MagazineEditor({ supabase, editingPost, onPublish }: { supabase: any; editingPost?: any; onPublish: () => void }) {
+  const [type, setType] = useState<'magazine' | 'notice'>(editingPost?.type || 'magazine')
+  const [category, setCategory] = useState(editingPost?.category || MAGAZINE_CATEGORIES[0].key)
+  const [title, setTitle] = useState(editingPost?.title || '')
+  const [content, setContent] = useState(editingPost?.content || '')
+  const [thumbnail, setThumbnail] = useState(editingPost?.thumbnail || '')
+  const [tags, setTags] = useState(editingPost?.tags?.join(', ') || '')
   const [uploading, setUploading] = useState(false)
   const [publishing, setPublishing] = useState(false)
-  const [region, setRegion] = useState('ny')
+  const [region, setRegion] = useState(editingPost?.region || 'ny')
   const fileInputRef = useRef<HTMLInputElement>(null)
   const contentRef = useRef<HTMLTextAreaElement>(null)
 
@@ -195,8 +198,7 @@ function MagazineEditor({ supabase, onPublish }: { supabase: any; onPublish: () 
 
     const tagArray = tags.split(',').map(t => t.trim()).filter(Boolean)
 
-    const { error } = await supabase.from('posts').insert({
-      user_id: user.id,
+    const postData = {
       type,
       category: type === 'notice' ? 'topic' : category,
       title: title.trim(),
@@ -204,10 +206,14 @@ function MagazineEditor({ supabase, onPublish }: { supabase: any; onPublish: () 
       thumbnail: thumbnail || null,
       tags: tagArray.length > 0 ? tagArray : null,
       region,
-    })
+    }
+
+    const { error } = editingPost
+      ? await supabase.from('posts').update(postData).eq('id', editingPost.id)
+      : await supabase.from('posts').insert({ ...postData, user_id: user.id })
 
     if (error) {
-      alert('게시 실패: ' + error.message)
+      alert((editingPost ? '수정' : '게시') + ' 실패: ' + error.message)
     } else {
       onPublish()
     }
@@ -254,7 +260,17 @@ function MagazineEditor({ supabase, onPublish }: { supabase: any; onPublish: () 
           {[
             { code: 'all', label: '전체' },
             { code: 'ny', label: '뉴욕/뉴저지' },
-            { code: 'nj', label: '뉴저지' },
+            { code: 'la', label: '로스앤젤레스' },
+            { code: 'dc', label: '워싱턴 DC' },
+            { code: 'seattle', label: '시애틀' },
+            { code: 'chicago', label: '시카고' },
+            { code: 'sf', label: '샌프란시스코' },
+            { code: 'atlanta', label: '애틀랜타' },
+            { code: 'philly', label: '필라델피아' },
+            { code: 'dallas', label: '달라스' },
+            { code: 'houston', label: '휴스턴' },
+            { code: 'hawaii', label: '하와이' },
+            { code: 'boston', label: '보스턴' },
           ].map(r => (
             <button
               key={r.code}
@@ -351,7 +367,7 @@ function MagazineEditor({ supabase, onPublish }: { supabase: any; onPublish: () 
           disabled={publishing}
           className="bg-black text-white px-6 py-2.5 rounded-full text-sm font-medium hover:bg-gray-800 disabled:opacity-50"
         >
-          {publishing ? '게시 중...' : '게시하기'}
+          {publishing ? (editingPost ? '수정 중...' : '게시 중...') : (editingPost ? '수정하기' : '게시하기')}
         </button>
         <button
           onClick={onPublish}
