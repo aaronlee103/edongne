@@ -94,7 +94,7 @@ function HomeContent() {
       .select('*, users(nickname)')
       .eq('type', 'magazine')
       .eq('category', 'editor')
-      .or(`and(published.is.null,region.eq.${regionCode}),and(published.is.null,region.eq.all),and(published.is.null,region.is.null),and(published.eq.true,region.eq.${regionCode}),and(published.eq.true,region.eq.all),and(published.eq.true,region.is.null)`)
+      .or('published.is.null,published.eq.true')
       .order('created_at', { ascending: false })
       .limit(5)
     if (data) setEditorPicks(data)
@@ -105,7 +105,7 @@ function HomeContent() {
       .from('posts')
       .select('*, users(nickname)')
       .eq('type', 'magazine')
-      .or(`and(published.is.null,region.eq.${regionCode}),and(published.is.null,region.eq.all),and(published.is.null,region.is.null),and(published.eq.true,region.eq.${regionCode}),and(published.eq.true,region.eq.all),and(published.eq.true,region.is.null)`)
+      .or('published.is.null,published.eq.true')
       .order('created_at', { ascending: false })
     if (searchTerm) {
       // 제목 또는 내용에서 검색어 포함 여부 확인
@@ -122,7 +122,7 @@ function HomeContent() {
       .from('posts')
       .select('*, comments(id), votes(value)')
       .eq('type', 'community')
-      .or(`and(published.is.null,region.eq.${regionCode}),and(published.is.null,region.eq.all),and(published.is.null,region.is.null),and(published.eq.true,region.eq.${regionCode}),and(published.eq.true,region.eq.all),and(published.eq.true,region.is.null)`)
+      .or('published.is.null,published.eq.true')
       .order('created_at', { ascending: false })
       .limit(6)
     if (data) {
@@ -140,7 +140,7 @@ function HomeContent() {
       .from('posts')
       .select('*, users(nickname)')
       .eq('type', 'magazine')
-      .or(`and(published.is.null,region.eq.${regionCode}),and(published.is.null,region.eq.all),and(published.is.null,region.is.null),and(published.eq.true,region.eq.${regionCode}),and(published.eq.true,region.eq.all),and(published.eq.true,region.is.null)`)
+      .or('published.is.null,published.eq.true')
       .gte('created_at', weekAgo)
       .order('views', { ascending: false })
       .limit(5)
