@@ -39,8 +39,7 @@ export default function BoardPage() {
       .from('posts')
       .select('*, votes(value), comments(id)')
       .eq('type', 'community')
-      .or('published.is.null,published.eq.true')
-      .or(`region.eq.${regionCode},region.eq.all,region.is.null`)
+      .or(`and(published.is.null,region.eq.${regionCode}),and(published.is.null,region.eq.all),and(published.is.null,region.is.null),and(published.eq.true,region.eq.${regionCode}),and(published.eq.true,region.eq.all),and(published.eq.true,region.is.null)`)
       .order('created_at', { ascending: false })
       .limit(20)
 
