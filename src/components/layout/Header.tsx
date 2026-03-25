@@ -12,6 +12,7 @@ const NAV_ITEMS = [
   { href: '/builders', label: '건축/인테리어' },
   { href: '/lawyers', label: '변호사' },
   { href: '/mortgage', label: '융자' },
+  { href: '/movers', label: '이사' },
 ]
 
 const ISSUE_CATEGORIES = [
