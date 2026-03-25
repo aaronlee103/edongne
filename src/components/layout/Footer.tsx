@@ -91,6 +91,7 @@ export default function Footer() {
               <li><Link href="/board" className="hover:text-primary">자유게시판</Link></li>
               <li><Link href="/board?cat=qna" className="hover:text-primary">질문답변</Link></li>
               <li><Link href="/board?cat=buysell" className="hover:text-primary">사고팔고</Link></li>
+
             </ul>
           </div>
           <div>
@@ -100,6 +101,7 @@ export default function Footer() {
               <li><Link href="/builders" className="hover:text-primary">건축/인테리어</Link></li>
               <li><Link href="/lawyers" className="hover:text-primary">변호사</Link></li>
               <li><Link href="/mortgage" className="hover:text-primary">융자/모기지</Link></li>
+              <li><Link href="/movers" className="hover:text-primary">이사</Link></li>
             </ul>
           </div>
           <div>
