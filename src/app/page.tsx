@@ -18,6 +18,14 @@ const ISSUE_CATEGORIES = [
 ]
 
 const ITEMS_PER_PAGE = 12
+const DEFAULT_REGION = 'ny'
+
+function regionFilter(regionCode: string): string {
+  if (regionCode === DEFAULT_REGION) {
+    return `region.eq.${regionCode},region.eq.all,region.is.null`
+  }
+  return `region.eq.${regionCode},region.eq.all`
+}
 
 export default function Home() {
   return (
@@ -95,6 +103,7 @@ function HomeContent() {
       .eq('type', 'magazine')
       .eq('category', 'editor')
       .or('published.is.null,published.eq.true')
+      .or(regionFilter(regionCode))
       .order('created_at', { ascending: false })
       .limit(5)
     if (data) setEditorPicks(data)
@@ -106,6 +115,7 @@ function HomeContent() {
       .select('*, users(nickname)')
       .eq('type', 'magazine')
       .or('published.is.null,published.eq.true')
+      .or(regionFilter(regionCode))
       .order('created_at', { ascending: false })
     if (searchTerm) {
       // 제목 또는 내용에서 검색어 포함 여부 확인
@@ -123,6 +133,7 @@ function HomeContent() {
       .select('*, comments(id), votes(value)')
       .eq('type', 'community')
       .or('published.is.null,published.eq.true')
+      .or(regionFilter(regionCode))
       .order('created_at', { ascending: false })
       .limit(6)
     if (data) {
@@ -141,6 +152,7 @@ function HomeContent() {
       .select('*, users(nickname)')
       .eq('type', 'magazine')
       .or('published.is.null,published.eq.true')
+      .or(regionFilter(regionCode))
       .gte('created_at', weekAgo)
       .order('views', { ascending: false })
       .limit(5)
@@ -159,7 +171,7 @@ function HomeContent() {
 
   const CATEGORIES: Record<string, string> = {
     free: '자유', qna: '질문답변', info: '정보', buysell: '사고팔고',
-    jobs: '구인구직', housing: '렌트/룸메',
+    housing: '렌트/룸메',
   }
 
   function timeAgo(date: string) {
@@ -169,7 +181,7 @@ function HomeContent() {
     return `${Math.floor(seconds / 86400)}일`
   }
 
-  // 에디터 픽 ID를 제외한 나머지 글
+  // 에디터 픽 ID를 제왹한 나머지 글
   const editorPickIds = new Set(editorPicks.map(p => p.id))
   const nonEditorPosts = allPosts.filter(p => !editorPickIds.has(p.id))
   // 슬라이드 아래 2개 카드
@@ -185,7 +197,7 @@ function HomeContent() {
   function stripMarkdown(text: string): string {
     return text
       .replace(/!\[[^\]]*\]\([^)]+\)/g, '')   // 이미지 제거
-      .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1') // 링크 → 텍스트만
+      .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1') // 맀크 → 텍스트만
       .replace(/^#{1,3}\s+/gm, '')              // 헤딩 제거
       .replace(/\*\*(.+?)\*\*/g, '$1')          // 볼드 제거
       .replace(/\*(.+?)\*/g, '$1')              // 이탤릭 제거
