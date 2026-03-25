@@ -6,15 +6,15 @@ import { createClient } from '@/lib/supabase-client'
 import { uploadImage } from '@/lib/upload'
 
 const MAGAZINE_CATEGORIES = [
-  { key: 'editor', label: '에디터 추천' },
-  { key: 'neighborhood', label: '이동네어때' },
-  { key: 'realestate', label: '부동산 가이드' },
-  { key: 'living', label: '생활 정보' },
-  { key: 'legal', label: '법률/비자' },
-  { key: 'construction', label: '건축/인테리어' },
-  { key: 'finance', label: '주택융자' },
-  { key: 'topic', label: '맛집/문화' },
-  { key: 'info', label: '뉴스' },
+  { key: 'editor', label: 'ìëí° ì¶ì²' },
+  { key: 'neighborhood', label: 'ì´ëë¤ì´ë' },
+  { key: 'realestate', label: 'ë¶ëì° ê°ì´ë' },
+  { key: 'living', label: 'ìí ì ë³´' },
+  { key: 'legal', label: 'ë²ë¥ /ë¹ì' },
+  { key: 'construction', label: 'ê±´ì¶/ì¸íë¦¬ì´' },
+  { key: 'finance', label: 'ì£¼íìµì' },
+  { key: 'topic', label: 'ë§ì§/ë¬¸í' },
+  { key: 'info', label: 'ë´ì¤' },
 ]
 
 export default function AdminMagazinePage() {
@@ -41,7 +41,7 @@ export default function AdminMagazinePage() {
   }
 
   async function deletePost(id: string) {
-    if (!confirm('삭제하시겠습니까?')) return
+    if (!confirm('ì­ì íìê² ìµëê¹?')) return
     await supabase.from('posts').delete().eq('id', id)
     fetchPosts()
   }
@@ -49,32 +49,32 @@ export default function AdminMagazinePage() {
   async function togglePublished(id: string, current: boolean | null) {
     const newVal = !(current === null || current === true)
     const { error } = await supabase.from('posts').update({ published: newVal }).eq('id', id)
-    if (error) { alert('변경 실패: ' + error.message); return }
+    if (error) { alert('ë³ê²½ ì¤í¨: ' + error.message); return }
     setPosts(prev => prev.map(p => p.id === id ? { ...p, published: newVal } : p))
   }
 
   return (
     <div>
       <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-bold">매거진 관리</h1>
+        <h1 className="text-2xl font-bold">ë§¤ê±°ì§ ê´ë¦¬</h1>
         <button
           onClick={() => setShowEditor(!showEditor)}
           className="bg-black text-white px-4 py-1.5 rounded-full text-sm hover:bg-gray-800"
         >
-          {showEditor ? '목록 보기' : '+ 새 매거진 글'}
+          {showEditor ? 'ëª©ë¡ ë³´ê¸°' : '+ ì ë§¤ê±°ì§ ê¸'}
         </button>
       </div>
 
       <div className="flex gap-2 mb-4 flex-wrap">
         {[
-          { key: 'all', label: '전체' },
-          { key: 'editor', label: '에디터 픽' },
-          { key: 'neighborhood', label: '이동네어때' },
-          { key: 'realestate', label: '부동산' },
-          { key: 'legal', label: '부동산 법률' },
-          { key: 'living', label: '생활정보' },
-          { key: 'construction', label: '건축/인테리어' },
-          { key: 'finance', label: '주택융자' },
+          { key: 'all', label: 'ì ì²´' },
+          { key: 'editor', label: 'ìëí° í½' },
+          { key: 'neighborhood', label: 'ì´ëë¤ì´ë' },
+          { key: 'realestate', label: 'ë¶ëì°' },
+          { key: 'legal', label: 'ë¶ëì° ë²ë¥ ' },
+          { key: 'living', label: 'ìíì ë³´' },
+          { key: 'construction', label: 'ê±´ì¶/ì¸íë¦¬ì´' },
+          { key: 'finance', label: 'ì£¼íìµì' },
         ].map(cat => (
           <button
             key={cat.key}
@@ -94,12 +94,12 @@ export default function AdminMagazinePage() {
       ) : (
         <div className="space-y-3">
           {loading ? (
-            <p className="text-center py-8 text-muted text-sm">불러오는 중...</p>
+            <p className="text-center py-8 text-muted text-sm">ë¶ë¬ì¤ë ì¤...</p>
           ) : posts.length === 0 ? (
             <div className="text-center py-12 border border-dashed border-border rounded-lg">
-              <p className="text-muted text-sm mb-2">매거진 콘텐츠가 없습니다</p>
+              <p className="text-muted text-sm mb-2">ë§¤ê±°ì§ ì½íì¸ ê° ììµëë¤</p>
               <button onClick={() => setShowEditor(true)} className="text-sm text-primary hover:underline">
-                첫 매거진 글 작성하기
+                ì²« ë§¤ê±°ì§ ê¸ ìì±íê¸°
               </button>
             </div>
           ) : posts.map((post) => (
@@ -110,7 +110,7 @@ export default function AdminMagazinePage() {
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 mb-1">
                   <span className={`text-xs px-1.5 py-0.5 rounded ${post.type === 'notice' ? 'bg-red-100 text-red-700' : 'bg-blue-100 text-blue-700'}`}>
-                    {post.type === 'notice' ? '공지' : '매거진'}
+                    {post.type === 'notice' ? 'ê³µì§' : 'ë§¤ê±°ì§'}
                   </span>
                   <span className="text-xs text-muted">{post.category}</span>
                 </div>
@@ -119,7 +119,7 @@ export default function AdminMagazinePage() {
                 </Link>
                 <div className="flex items-center gap-3 mt-1 text-xs text-muted">
                   <span>{new Date(post.created_at).toLocaleDateString('ko-KR')}</span>
-                  <span>조회 {post.views || 0}</span>
+                  <span>ì¡°í {post.views || 0}</span>
                   {post.tags?.length > 0 && post.tags.map((t: string) => (
                     <span key={t} className="bg-gray-100 px-1.5 py-0.5 rounded">#{t}</span>
                   ))}
@@ -130,9 +130,9 @@ export default function AdminMagazinePage() {
                   onClick={() => togglePublished(post.id, post.published)}
                   className={`text-xs px-2 py-0.5 rounded-full ${post.published === false ? 'bg-gray-200 text-gray-500' : 'bg-green-100 text-green-700'}`}
                 >
-                  {post.published === false ? '비공개' : '공개'}
+                  {post.published === false ? 'ë¹ê³µê°' : 'ê³µê°'}
                 </button>
-                <button onClick={() => deletePost(post.id)} className="text-xs text-red-500 hover:underline">삭제</button>
+                <button onClick={() => deletePost(post.id)} className="text-xs text-red-500 hover:underline">ì­ì </button>
               </div>
             </div>
           ))}
@@ -151,6 +151,7 @@ function MagazineEditor({ supabase, onPublish }: { supabase: any; onPublish: () 
   const [tags, setTags] = useState('')
   const [uploading, setUploading] = useState(false)
   const [publishing, setPublishing] = useState(false)
+  const [region, setRegion] = useState('ny')
   const fileInputRef = useRef<HTMLInputElement>(null)
   const contentRef = useRef<HTMLTextAreaElement>(null)
 
@@ -163,20 +164,20 @@ function MagazineEditor({ supabase, onPublish }: { supabase: any; onPublish: () 
     setUploading(false)
 
     if (!url) {
-      alert('이미지 업로드에 실패했습니다')
+      alert('ì´ë¯¸ì§ ìë¡ëì ì¤í¨íìµëë¤')
       return
     }
 
     if (isThumbnail) {
       setThumbnail(url)
     } else {
-      // 에디터에 이미지 삽입
+      // ìëí°ì ì´ë¯¸ì§ ì½ì
       const textarea = contentRef.current
       if (textarea) {
         const pos = textarea.selectionStart
         const before = content.substring(0, pos)
         const after = content.substring(pos)
-        const imgTag = `\n![이미지](${url})\n`
+        const imgTag = `\n![ì´ë¯¸ì§](${url})\n`
         setContent(before + imgTag + after)
       }
     }
@@ -184,13 +185,13 @@ function MagazineEditor({ supabase, onPublish }: { supabase: any; onPublish: () 
 
   async function handlePublish() {
     if (!title.trim() || !content.trim()) {
-      alert('제목과 내용을 입력해주세요')
+      alert('ì ëª©ê³¼ ë´ì©ì ìë ¥í´ì£¼ì¸ì')
       return
     }
 
     setPublishing(true)
     const { data: { user } } = await supabase.auth.getUser()
-    if (!user) { alert('로그인 필요'); setPublishing(false); return }
+    if (!user) { alert('ë¡ê·¸ì¸ íì'); setPublishing(false); return }
 
     const tagArray = tags.split(',').map(t => t.trim()).filter(Boolean)
 
@@ -202,10 +203,11 @@ function MagazineEditor({ supabase, onPublish }: { supabase: any; onPublish: () 
       content: content.trim(),
       thumbnail: thumbnail || null,
       tags: tagArray.length > 0 ? tagArray : null,
+      region,
     })
 
     if (error) {
-      alert('게시 실패: ' + error.message)
+      alert('ê²ì ì¤í¨: ' + error.message)
     } else {
       onPublish()
     }
@@ -214,7 +216,7 @@ function MagazineEditor({ supabase, onPublish }: { supabase: any; onPublish: () 
 
   return (
     <div className="space-y-4">
-      {/* 유형 선택 */}
+      {/* ì í ì í */}
       <div className="flex gap-2">
         {(['magazine', 'notice'] as const).map(t => (
           <button
@@ -222,15 +224,15 @@ function MagazineEditor({ supabase, onPublish }: { supabase: any; onPublish: () 
             onClick={() => setType(t)}
             className={`px-4 py-1.5 text-sm rounded-full ${type === t ? 'bg-black text-white' : 'bg-gray-100 text-secondary'}`}
           >
-            {t === 'magazine' ? '매거진' : '공지'}
+            {t === 'magazine' ? 'ë§¤ê±°ì§' : 'ê³µì§'}
           </button>
         ))}
       </div>
 
-      {/* 카테고리 */}
+      {/* ì¹´íê³ ë¦¬ */}
       {type === 'magazine' && (
         <div>
-          <label className="block text-sm font-medium mb-1.5">카테고리</label>
+          <label className="block text-sm font-medium mb-1.5">ì¹´íê³ ë¦¬</label>
           <div className="flex flex-wrap gap-2">
             {MAGAZINE_CATEGORIES.map(cat => (
               <button
@@ -245,17 +247,17 @@ function MagazineEditor({ supabase, onPublish }: { supabase: any; onPublish: () 
         </div>
       )}
 
-      {/* 대표 이미지 */}
+      {/* ëí ì´ë¯¸ì§ */}
       <div>
-        <label className="block text-sm font-medium mb-1.5">대표 이미지</label>
+        <label className="block text-sm font-medium mb-1.5">ëí ì´ë¯¸ì§</label>
         {thumbnail ? (
           <div className="relative inline-block">
-            <img src={thumbnail} alt="썸네일" className="w-48 h-32 object-cover rounded-lg border border-border" />
+            <img src={thumbnail} alt="ì¸ë¤ì¼" className="w-48 h-32 object-cover rounded-lg border border-border" />
             <button
               onClick={() => setThumbnail('')}
               className="absolute -top-2 -right-2 w-6 h-6 bg-black text-white rounded-full text-xs flex items-center justify-center"
             >
-              ✕
+              â
             </button>
           </div>
         ) : (
@@ -266,27 +268,27 @@ function MagazineEditor({ supabase, onPublish }: { supabase: any; onPublish: () 
               className="hidden"
               onChange={(e) => handleImageUpload(e, true)}
             />
-            <span className="text-sm text-muted">{uploading ? '업로드 중...' : '+ 이미지 선택'}</span>
+            <span className="text-sm text-muted">{uploading ? 'ìë¡ë ì¤...' : '+ ì´ë¯¸ì§ ì í'}</span>
           </label>
         )}
       </div>
 
-      {/* 제목 */}
+      {/* ì ëª© */}
       <div>
-        <label className="block text-sm font-medium mb-1.5">제목</label>
+        <label className="block text-sm font-medium mb-1.5">ì ëª©</label>
         <input
           type="text"
           value={title}
           onChange={e => setTitle(e.target.value)}
-          placeholder="매거진 제목을 입력하세요"
+          placeholder="ë§¤ê±°ì§ ì ëª©ì ìë ¥íì¸ì"
           className="w-full px-4 py-2.5 border border-border rounded-lg text-sm focus:outline-none focus:border-black"
         />
       </div>
 
-      {/* 본문 에디터 */}
+      {/* ë³¸ë¬¸ ìëí° */}
       <div>
         <div className="flex items-center justify-between mb-1.5">
-          <label className="text-sm font-medium">본문</label>
+          <label className="text-sm font-medium">ë³¸ë¬¸</label>
           <div className="flex gap-2">
             <label className="text-xs text-muted cursor-pointer hover:text-primary">
               <input
@@ -296,7 +298,7 @@ function MagazineEditor({ supabase, onPublish }: { supabase: any; onPublish: () 
                 ref={fileInputRef}
                 onChange={(e) => handleImageUpload(e, false)}
               />
-              📷 이미지 삽입
+              ð· ì´ë¯¸ì§ ì½ì
             </label>
           </div>
         </div>
@@ -304,38 +306,38 @@ function MagazineEditor({ supabase, onPublish }: { supabase: any; onPublish: () 
           ref={contentRef}
           value={content}
           onChange={e => setContent(e.target.value)}
-          placeholder="본문을 작성하세요. 마크다운 형식을 지원합니다.&#10;&#10;## 소제목&#10;본문 내용...&#10;&#10;**굵게**, *기울임*, [링크](url)"
+          placeholder="ë³¸ë¬¸ì ìì±íì¸ì. ë§í¬ë¤ì´ íìì ì§ìí©ëë¤.&#10;&#10;## ìì ëª©&#10;ë³¸ë¬¸ ë´ì©...&#10;&#10;**êµµê²**, *ê¸°ì¸ì*, [ë§í¬](url)"
           className="w-full px-4 py-3 border border-border rounded-lg text-sm min-h-[400px] resize-y focus:outline-none focus:border-black font-mono"
         />
-        <p className="text-xs text-muted mt-1">마크다운 지원: ## 제목, **굵게**, *기울임*, ![이미지](url), [링크](url)</p>
+        <p className="text-xs text-muted mt-1">ë§í¬ë¤ì´ ì§ì: ## ì ëª©, **êµµê²**, *ê¸°ì¸ì*, ![ì´ë¯¸ì§](url), [ë§í¬](url)</p>
       </div>
 
-      {/* 태그 */}
+      {/* íê·¸ */}
       <div>
-        <label className="block text-sm font-medium mb-1.5">태그 (쉼표로 구분)</label>
+        <label className="block text-sm font-medium mb-1.5">íê·¸ (ì¼íë¡ êµ¬ë¶)</label>
         <input
           type="text"
           value={tags}
           onChange={e => setTags(e.target.value)}
-          placeholder="부동산, 뉴욕, 2025전망"
+          placeholder="ë¶ëì°, ë´ì, 2025ì ë§"
           className="w-full px-4 py-2 border border-border rounded-lg text-sm focus:outline-none focus:border-black"
         />
       </div>
 
-      {/* 게시 버튼 */}
+      {/* ê²ì ë²í¼ */}
       <div className="flex items-center gap-3 pt-4 border-t border-border">
         <button
           onClick={handlePublish}
           disabled={publishing}
           className="bg-black text-white px-6 py-2.5 rounded-full text-sm font-medium hover:bg-gray-800 disabled:opacity-50"
         >
-          {publishing ? '게시 중...' : '게시하기'}
+          {publishing ? 'ê²ì ì¤...' : 'ê²ìíê¸°'}
         </button>
         <button
           onClick={onPublish}
           className="px-6 py-2.5 border border-border rounded-full text-sm hover:bg-gray-50"
         >
-          취소
+          ì·¨ì
         </button>
       </div>
     </div>
