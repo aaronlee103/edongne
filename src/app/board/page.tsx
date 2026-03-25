@@ -20,6 +20,15 @@ const LISTING_TABS = [
   { label: '레트매물', href: '/listings?type=rent' },
 ]
 
+const DEFAULT_REGION = 'ny'
+
+function regionFilter(regionCode: string): string {
+  if (regionCode === DEFAULT_REGION) {
+    return `region.eq.${regionCode},region.eq.all,region.is.null`
+  }
+  return `region.eq.${regionCode},region.eq.all`
+}
+
 export default function BoardPage() {
   const [activeCategory, setActiveCategory] = useState('all')
   const [posts, setPosts] = useState<any[]>([])
@@ -39,7 +48,7 @@ export default function BoardPage() {
       .select('*, votes(value), comments(id)')
       .eq('type', 'community')
       .or('published.is.null,published.eq.true')
-      .or(`region.eq.${regionCode},region.eq.all,region.is.null`)
+      .or(regionFilter(regionCode))
       .order('created_at', { ascending: false })
       .limit(20)
 
@@ -140,7 +149,7 @@ export default function BoardPage() {
                   <div className="flex items-center gap-2 mb-1">
                     <span className="text-xs px-1.5 py-0.5 bg-gray-100 rounded text-muted">
                       {CATEGORIES.find(c => c.key === post.category)?.label || post.category}
-                    </span>
+                   </span>
                   </div>
                   <h3 className="text-sm font-medium truncate">{post.title}</h3>
                   <div className="flex items-center gap-3 mt-1.5 text-xs text-muted">
