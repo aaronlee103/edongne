@@ -17,6 +17,7 @@ export default function MortgagePage() {
   const [items, setItems] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [currentPage, setCurrentPage] = useState(1)
+  const [selectedSubRegion, setSelectedSubRegion] = useState('전체')
   const [selectedArea, setSelectedArea] = useState('전체')
   const [searchQuery, setSearchQuery] = useState('')
   const { regionCode } = useRegion()
@@ -40,11 +41,22 @@ export default function MortgagePage() {
     fetchItems()
   }, [regionCode])
 
+  const subRegions = regionCode === DEFAULT_REGION ? ['전체', 'NY', 'NJ'] : []
+
   const areas = useMemo(() => {
-    return [...new Set(items.map(b => b.area).filter(Boolean))].sort()
-  }, [items])
+    let data = items
+    if (selectedSubRegion !== '전체') {
+      data = data.filter(b => b.region === selectedSubRegion)
+    }
+    return [...new Set(data.map(b => b.area).filter(Boolean))].sort()
+  }, [items, selectedSubRegion])
+
+  useEffect(() => {
+    setSelectedArea('전체')
+  }, [selectedSubRegion])
 
   const filtered = items.filter(b => {
+    if (selectedSubRegion !== '전체' && b.region !== selectedSubRegion) return false
     if (selectedArea !== '전체' && b.area !== selectedArea) return false
     if (searchQuery) {
       const q = searchQuery.toLowerCase()
@@ -70,6 +82,24 @@ export default function MortgagePage() {
     <div className="max-w-7xl mx-auto px-4 py-10">
       <h1 className="text-2xl font-bold mb-1">융자/모기지</h1>
       <p className="text-sm text-gray-500 mb-6">한인 융자 전문가 {filtered.length}명</p>
+
+      {subRegions.length > 0 && (
+        <div className="flex flex-wrap gap-2 mb-4">
+          {subRegions.map(region => (
+            <button
+              key={region}
+              onClick={() => { setSelectedSubRegion(region); setCurrentPage(1) }}
+              className={`px-4 py-2 rounded-full text-sm font-medium transition ${
+                selectedSubRegion === region
+                  ? 'bg-blue-600 text-white'
+                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+              }`}
+            >
+              {region === '전체' ? '전체' : region === 'NY' ? '뉴욕' : '뉴저지'}
+            </button>
+          ))}
+        </div>
+      )}
 
       {areas.length > 0 && (
         <div className="flex flex-wrap gap-2 mb-4">
