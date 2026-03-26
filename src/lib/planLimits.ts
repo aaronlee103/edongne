@@ -11,17 +11,17 @@ export const PLAN_LIMITS: Record<PlanType, {
     maxUploadSizeBytes: 2 * 1024 * 1024,
   },
   premium: {
-    maxPortfolioImages: 10,
+    maxPortfolioImages: 9,
     maxUploadSizeMB: 5,
     maxUploadSizeBytes: 5 * 1024 * 1024,
   },
   premium_plus: {
-    maxPortfolioImages: 50,
+    maxPortfolioImages: 30,
     maxUploadSizeMB: 5,
     maxUploadSizeBytes: 5 * 1024 * 1024,
   },
   sponsor: {
-    maxPortfolioImages: 50,
+    maxPortfolioImages: 30,
     maxUploadSizeMB: 5,
     maxUploadSizeBytes: 5 * 1024 * 1024,
   },
