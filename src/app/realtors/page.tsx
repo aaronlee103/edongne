@@ -91,8 +91,8 @@ export default function RealtorsPage() {
 
   return (
     <div className="max-w-7xl mx-auto px-4 py-10">
-      <h1 className="text-2xl font-bold mb-1">리얼터 디렉토리</h1>
-      <p className="text-sm text-gray-500 mb-6">총 {filtered.length}명의 리얼터</p>
+      <h1 className="text-2xl font-bold mb-1">에이전트</h1>
+      <p className="text-sm text-gray-500 mb-6">한인 부동산 에이전트 {filtered.length}명</p>
 
       {subRegions.length > 0 && (
         <div className="flex flex-wrap gap-2 mb-4">
