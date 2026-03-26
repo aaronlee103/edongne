@@ -169,7 +169,7 @@ export default function BusinessesContent() {
       <p className="text-sm text-gray-500 mb-4">총 {filtered.length}개 업체</p>
 
       {paged.length === 0 ? (
-        <div className="text-center py-20 text-gray-400">검색 결과가 없습니다.</div>
+        <div className="text-center py-20 text-gray-400">가색 결과가 없습니다.</div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {paged.map((biz: any) => {
@@ -187,9 +187,9 @@ export default function BusinessesContent() {
                     </div>
                   )}
                   <div className="p-4">
-                    <h2 className="text-lg font-semibold">{biz.kor_name}</h2>
+                    <h2 className="text-lg font-semibold truncate">{biz.kor_name}</h2>
                     {biz.eng_name && (
-                      <p className="text-sm text-gray-500">{biz.eng_name}</p>
+                      <p className="text-sm text-gray-500 truncate">{biz.eng_name}</p>
                     )}
                     <p className="text-sm text-gray-600 mt-1">
                       {biz.region}{biz.area ? ` · ${biz.area}` : ''}
