@@ -15,7 +15,7 @@ const PLAN_COLOR: Record<string, string> = {
 }
 
 const TYPE_LABEL: Record<string, string> = {
-  realtor: '부동산', builder: '건축/인테리어', lawyer: '변호사', mortgage: '융자/모기지',
+  realtor: '부동산', builder: '건축/인테리어', lawyer: '변호사', mortgage: '융자/모기지', mover: '이사',
 }
 
 export default function BusinessDetailPage({ params }: { params: { id: string } }) {
@@ -32,13 +32,20 @@ export default function BusinessDetailPage({ params }: { params: { id: string } 
   const [lightbox, setLightbox] = useState<number | null>(null)
   const [authorPosts, setAuthorPosts] = useState<any[]>([])
   const [showEdit, setShowEdit] = useState(false)
+  const [userRole, setUserRole] = useState<string | null>(null)
 
   const isOwner = user && business && user.id === business.user_id
+  const isAdmin = userRole === 'super'
 
   useEffect(() => {
     fetchData()
     supabase.auth.getUser().then(({ data }) => {
-      if (data.user) setUser(data.user)
+      if (data.user) {
+        setUser(data.user)
+        supabase.from('users').select('role').eq('id', data.user.id).single().then(({ data: profile }) => {
+          if (profile) setUserRole(profile.role)
+        })
+      }
     })
   }, [])
 
@@ -123,7 +130,7 @@ export default function BusinessDetailPage({ params }: { params: { id: string } 
   }
 
   const TYPE_BACK: Record<string, string> = {
-    realtor: '/realtors', builder: '/builders', lawyer: '/lawyers', mortgage: '/mortgage',
+    realtor: '/realtors', builder: '/builders', lawyer: '/lawyers', mortgage: '/mortgage', mover: '/movers',
   }
 
   const portfolioItems = business.portfolio || []
@@ -157,6 +164,9 @@ export default function BusinessDetailPage({ params }: { params: { id: string } 
               {isOwner && (
                 <><button onClick={() => setShowEdit(true)} className="text-xs bg-gray-100 text-secondary px-2.5 py-1 rounded-full hover:bg-gray-200 transition-colors">수정</button>
                 <Link href={`/business/${params.id}/dashboard`} className="text-xs bg-black text-white px-2.5 py-1 rounded-full hover:bg-gray-800 transition-colors">대시보드</Link></>
+              )}
+              {isAdmin && !isOwner && (
+                <button onClick={() => setShowEdit(true)} className="text-xs bg-red-600 text-white px-2.5 py-1 rounded-full hover:bg-red-700 transition-colors">관리자 수정</button>
               )}
             </div>
             {business.eng_name && <p className="text-muted text-sm">{business.eng_name}</p>}
@@ -334,7 +344,7 @@ export default function BusinessDetailPage({ params }: { params: { id: string } 
       </section>
 
       {/* 업체 수정 모달 (소유자용) */}
-      {showEdit && isOwner && (
+      {showEdit && (isOwner || isAdmin) && (
         <OwnerEditModal
           business={business}
           onClose={() => setShowEdit(false)}
@@ -539,7 +549,7 @@ function OwnerEditModal({ business, onClose, onSave }: { business: any; onClose:
 
           {/* 버튼 */}
           <div className="flex justify-end gap-2 pt-2">
-            <button type="button" onClick={onClose} className="px-4 py-2 text-sm text-muted hover:text-primary">취소</button>
+            <button type="button" onClick={onClose} className="px-4 py-2 text-sm text-muted hover:text-primary">취셬</button>
             <button type="submit" disabled={saving || uploading} className="bg-black text-white px-6 py-2 rounded-full text-sm hover:bg-gray-800 disabled:opacity-50">
               {saving ? '저장 중...' : '저장'}
             </button>
