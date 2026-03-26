@@ -216,55 +216,65 @@ export default function BusinessDetailPage({ params }: { params: { id: string } 
       )}
 
       {/* 포트폴리오 */}
-      {portfolioItems.length > 0 && (
-        <section className="mb-8">
-          <h2 className="font-bold text-lg mb-3">포트폴리오</h2>
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-            {portfolioItems.map((item: any, i: number) => (
-              <div key={i} className="cursor-pointer group" onClick={() => setLightbox(i)}>
-                <div className="relative overflow-hidden rounded-lg border border-border">
-                  <img src={item.url} alt={item.caption || `포트폴리오 ${i + 1}`}
-                    className="w-full h-36 md:h-44 object-cover group-hover:scale-105 transition-transform duration-300" />
+      {portfolioItems.length > 0 && (() => {
+        const maxImages = getPlanLimits(business?.plan).maxPortfolioImages
+        const visibleItems = portfolioItems.slice(0, maxImages)
+        const hasMore = portfolioItems.length > maxImages
+        return (
+          <section className="mb-8">
+            <h2 className="font-bold text-lg mb-3">포트폴리오</h2>
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+              {visibleItems.map((item: any, i: number) => (
+                <div key={i} className="cursor-pointer group" onClick={() => setLightbox(i)}>
+                  <div className="relative overflow-hidden rounded-lg border border-border">
+                    <img src={item.url} alt={item.caption || `포트폴리오 ${i + 1}`}
+                      className="w-full h-36 md:h-44 object-cover group-hover:scale-105 transition-transform duration-300" />
+                  </div>
+                  {item.caption && (
+                    <p className="text-xs text-muted mt-1.5 line-clamp-2">{item.caption}</p>
+                  )}
                 </div>
-
-            {business?.portfolio && business.portfolio.length > getPlanLimits(business?.plan).maxPortfolioImages && (
-              <p className="text-sm text-gray-500 mt-2 text-center">
-                현재 플랜에서는 {getPlanLimits(business?.plan).maxPortfolioImages}장까지 표시됩니다.
-                포트폴리오를 더 보시려면 플랜을 업그레이드하세요.
-              </p>
-            )}
-                {item.caption && (
-                  <p className="text-xs text-muted mt-1.5 line-clamp-2">{item.caption}</p>
-                )}
-              </div>
-            ))}
-          </div>
-        </section>
-      )}
+              ))}
+              {hasMore && (
+                <div className="flex items-center justify-center rounded-lg border border-dashed border-gray-300 bg-gray-50 h-36 md:h-44">
+                  <div className="text-center px-4">
+                    <p className="text-sm text-gray-400 font-medium">+{portfolioItems.length - maxImages}장</p>
+                    <p className="text-xs text-gray-400 mt-1">플랜을 업그레이드하시면<br/>더 많은 포트폴리오를 보실 수 있습니다.</p>
+                  </div>
+                </div>
+              )}
+            </div>
+          </section>
+        )
+      })()}
 
       {/* 라이트박스 */}
-      {lightbox !== null && (
-        <div className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4" onClick={() => setLightbox(null)}>
-          <div className="relative max-w-3xl w-full" onClick={e => e.stopPropagation()}>
-            <button onClick={() => setLightbox(null)} className="absolute -top-10 right-0 text-white text-2xl hover:opacity-70">✕</button>
-            <img src={portfolioItems[lightbox].url} alt="" className="w-full max-h-[80vh] object-contain rounded-lg" />
-            {portfolioItems[lightbox].caption && (
-              <p className="text-white text-sm text-center mt-3">{portfolioItems[lightbox].caption}</p>
-            )}
-            <div className="flex justify-between mt-4">
-              <button
-                onClick={() => setLightbox(lightbox > 0 ? lightbox - 1 : portfolioItems.length - 1)}
-                className="text-white text-sm px-4 py-2 bg-white/20 rounded-full hover:bg-white/30"
-              >← 이전</button>
-              <span className="text-white/60 text-sm self-center">{lightbox + 1} / {portfolioItems.length}</span>
-              <button
-                onClick={() => setLightbox(lightbox < portfolioItems.length - 1 ? lightbox + 1 : 0)}
-                className="text-white text-sm px-4 py-2 bg-white/20 rounded-full hover:bg-white/30"
-              >다음 →</button>
+      {lightbox !== null && (() => {
+        const maxImages = getPlanLimits(business?.plan).maxPortfolioImages
+        const visibleItems = portfolioItems.slice(0, maxImages)
+        return (
+          <div className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4" onClick={() => setLightbox(null)}>
+            <div className="relative max-w-3xl w-full" onClick={e => e.stopPropagation()}>
+              <button onClick={() => setLightbox(null)} className="absolute -top-10 right-0 text-white text-2xl hover:opacity-70">✕</button>
+              <img src={visibleItems[lightbox].url} alt="" className="w-full max-h-[80vh] object-contain rounded-lg" />
+              {visibleItems[lightbox].caption && (
+                <p className="text-white text-sm text-center mt-3">{visibleItems[lightbox].caption}</p>
+              )}
+              <div className="flex justify-between mt-4">
+                <button
+                  onClick={() => setLightbox(lightbox > 0 ? lightbox - 1 : visibleItems.length - 1)}
+                  className="text-white text-sm px-4 py-2 bg-white/20 rounded-full hover:bg-white/30"
+                >← 이전</button>
+                <span className="text-white/60 text-sm self-center">{lightbox + 1} / {visibleItems.length}</span>
+                <button
+                  onClick={() => setLightbox(lightbox < visibleItems.length - 1 ? lightbox + 1 : 0)}
+                  className="text-white text-sm px-4 py-2 bg-white/20 rounded-full hover:bg-white/30"
+                >다음 →</button>
+              </div>
             </div>
           </div>
-        </div>
-      )}
+        )
+      })()}
 
       {/* 작성한 글 */}
       {authorPosts.length > 0 && (
