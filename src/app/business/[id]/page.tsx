@@ -5,17 +5,23 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase-client'
 import { uploadImage } from '@/lib/upload'
-// AdBanner removed from business profile
-import { getPlanLimits } from '@/lib/planLimits';
+import { getPlanLimits } from '@/lib/planLimits'
+import { getListingLimits } from '@/lib/listingLimits'
 
-const PLAN_LABEL: Record<string, string> = { premium: 'PREMIUM', pro: 'PRO' }
+const PLAN_LABEL: Record<string, string> = { premium: 'PREMIUM', premium_plus: 'PRO', sponsor: 'SPONSOR' }
 const PLAN_COLOR: Record<string, string> = {
-  premium: 'bg-black text-white',
-  pro: 'bg-blue-600 text-white',
+  premium: 'bg-green-600 text-white',
+  premium_plus: 'bg-blue-600 text-white',
+  sponsor: 'bg-yellow-500 text-black',
 }
 
 const TYPE_LABEL: Record<string, string> = {
   realtor: '부동산', builder: '건축/인테리어', lawyer: '변호사', mortgage: '융자/모기지', mover: '이사',
+}
+
+const PROPERTY_TYPE_LABELS: Record<string, string> = {
+  house: '단독주택', condo: '콘도', townhouse: '타운하우스',
+  apartment: '아파트', commercial: '상업용', land: '토지', other: '기타',
 }
 
 export default function BusinessDetailPage({ params }: { params: { id: string } }) {
@@ -33,9 +39,11 @@ export default function BusinessDetailPage({ params }: { params: { id: string } 
   const [authorPosts, setAuthorPosts] = useState<any[]>([])
   const [showEdit, setShowEdit] = useState(false)
   const [userRole, setUserRole] = useState<string | null>(null)
+  const [listings, setListings] = useState<any[]>([])
 
   const isOwner = user && business && user.id === business.user_id
   const isAdmin = userRole === 'super'
+  const isRealtor = business?.type === 'realtor'
 
   useEffect(() => {
     fetchData()
@@ -66,6 +74,7 @@ export default function BusinessDetailPage({ params }: { params: { id: string } 
       .order('created_at', { ascending: false })
 
     if (revs) setReviews(revs)
+
     // Fetch posts by this business owner
     if (biz?.user_id) {
       const { data: posts } = await supabase
@@ -76,6 +85,17 @@ export default function BusinessDetailPage({ params }: { params: { id: string } 
         .order('created_at', { ascending: false })
         .limit(10)
       if (posts) setAuthorPosts(posts)
+
+      // Fetch listings for realtor businesses
+      if (biz.type === 'realtor') {
+        const { data: listingData } = await supabase
+          .from('listings')
+          .select('*')
+          .eq('business_id', biz.id)
+          .eq('status', 'active')
+          .order('created_at', { ascending: false })
+        if (listingData) setListings(listingData)
+      }
     }
     setLoading(false)
   }
@@ -135,22 +155,29 @@ export default function BusinessDetailPage({ params }: { params: { id: string } 
 
   const portfolioItems = business.portfolio || []
 
+  // Plan-based limits
+  const maxImages = getPlanLimits(business?.plan).maxPortfolioImages
+  const maxListings = getListingLimits(business?.plan).maxListings
+  const visiblePortfolio = portfolioItems.slice(0, maxImages)
+  const hasMorePortfolio = portfolioItems.length > maxImages
+  const visibleListings = listings.slice(0, maxListings)
+  const hasMoreListings = listings.length > maxListings
+
+  function formatPrice(price: number, listingType: string) {
+    if (listingType === 'rent') return `$${price.toLocaleString()}/월`
+    return `$${price.toLocaleString()}`
+  }
+
   return (
     <div className="max-w-4xl mx-auto px-4 py-8">
       <Link href={TYPE_BACK[business.type] || '/realtors'} className="text-sm text-muted hover:text-primary mb-6 inline-block">
         ← 목록으로 돌아가기
       </Link>
 
-      {/* 업체 정보 */}
-      <div className="border border-border rounded-xl p-6 mb-8">
-        <div className="flex items-start gap-5 mb-4">
-          {/* 대표 이미지 - 정사각형 */}
-          {business.hero_image && (
-            <div className="w-28 h-28 md:w-36 md:h-36 flex-shrink-0 rounded-xl overflow-hidden">
-              <img src={business.hero_image} alt={business.kor_name} className="w-full h-full object-cover" />
-            </div>
-          )}
-          <div className="flex-1">
+      {/* 업체 정보 (텍스트만, 이미지 없음) */}
+      <div className="border border-border rounded-xl p-6 mb-0 bg-white">
+        <div className="flex items-start justify-between mb-3">
+          <div>
             <div className="flex items-center gap-2 mb-1">
               <span className="text-xs px-2 py-0.5 bg-gray-100 rounded">{TYPE_LABEL[business.type] || business.type}</span>
               {business.plan !== 'basic' && (
@@ -169,7 +196,7 @@ export default function BusinessDetailPage({ params }: { params: { id: string } 
                 <button onClick={() => setShowEdit(true)} className="text-xs bg-red-600 text-white px-2.5 py-1 rounded-full hover:bg-red-700 transition-colors">관리자 수정</button>
               )}
             </div>
-            {business.eng_name && <p className="text-muted text-sm">{business.eng_name}</p>}
+            {business.eng_name && <p className="text-muted text-sm mt-0.5">{business.eng_name}</p>}
           </div>
         </div>
 
@@ -205,6 +232,21 @@ export default function BusinessDetailPage({ params }: { params: { id: string } 
         </div>
       </div>
 
+      {/* 배너 이미지 (페이스북 커버 스타일) */}
+      {business.hero_image ? (
+        <div className="rounded-b-xl overflow-hidden mb-8 border border-t-0 border-border">
+          <div className="relative w-full" style={{ aspectRatio: '3 / 1' }}>
+            <img
+              src={business.hero_image}
+              alt={`${business.kor_name} 배너`}
+              className="w-full h-full object-cover"
+            />
+          </div>
+        </div>
+      ) : (
+        <div className="mb-8" />
+      )}
+
       {/* 업체 소개 */}
       {business.description && (
         <section className="mb-8">
@@ -215,66 +257,114 @@ export default function BusinessDetailPage({ params }: { params: { id: string } 
         </section>
       )}
 
-      {/* 포트폴리오 */}
-      {portfolioItems.length > 0 && (() => {
-        const maxImages = getPlanLimits(business?.plan).maxPortfolioImages
-        const visibleItems = portfolioItems.slice(0, maxImages)
-        const hasMore = portfolioItems.length > maxImages
-        return (
-          <section className="mb-8">
-            <h2 className="font-bold text-lg mb-3">포트폴리오</h2>
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-              {visibleItems.map((item: any, i: number) => (
-                <div key={i} className="cursor-pointer group" onClick={() => setLightbox(i)}>
-                  <div className="relative overflow-hidden rounded-lg border border-border">
-                    <img src={item.url} alt={item.caption || `포트폴리오 ${i + 1}`}
-                      className="w-full h-36 md:h-44 object-cover group-hover:scale-105 transition-transform duration-300" />
+      {/* 부동산 업체: 리스팅 표시 */}
+      {isRealtor && listings.length > 0 && (
+        <section className="mb-8">
+          <h2 className="font-bold text-lg mb-3">매물 리스팅</h2>
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+            {visibleListings.map((listing: any) => (
+              <Link key={listing.id} href={`/listings/${listing.id}`} className="group">
+                <div className="rounded-lg overflow-hidden border border-border hover:shadow-md transition-all">
+                  {/* 사진 + 뱃지 */}
+                  <div className="relative aspect-[4/3] bg-gray-100">
+                    {listing.photos?.[0] ? (
+                      <img
+                        src={listing.photos[0]}
+                        alt={listing.title}
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                      />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center text-gray-300 text-3xl">🏠</div>
+                    )}
+                    {/* 렌트/매매 뱃지 */}
+                    <span className={`absolute top-2 left-2 text-xs px-2 py-0.5 rounded font-medium ${
+                      listing.type === 'sale' ? 'bg-blue-500 text-white' : 'bg-green-500 text-white'
+                    }`}>
+                      {listing.type === 'sale' ? '매매' : '렌트'}
+                    </span>
                   </div>
-                  {item.caption && (
-                    <p className="text-xs text-muted mt-1.5 line-clamp-2">{item.caption}</p>
-                  )}
-                </div>
-              ))}
-              {hasMore && (isOwner || isAdmin) && (
-                <div className="flex items-center justify-center rounded-lg border border-dashed border-gray-300 bg-gray-50 h-36 md:h-44">
-                  <div className="text-center px-4">
-                    <p className="text-sm text-gray-400 font-medium">+{portfolioItems.length - maxImages}장</p>
-                    <p className="text-xs text-gray-400 mt-1">플랜을 업그레이드하시면<br/>더 많은 포트폴리오를 올릴 수 있습니다.</p>
+                  {/* 매물 정보 */}
+                  <div className="p-2.5">
+                    <p className="text-sm font-bold text-orange-500">{formatPrice(listing.price, listing.type)}</p>
+                    <p className="text-xs font-medium mt-0.5 line-clamp-1">{listing.title}</p>
+                    <div className="flex items-center gap-2 mt-1 text-xs text-gray-500">
+                      {listing.bedrooms != null && (
+                        <span>{listing.bedrooms === 0 ? '스튜디오' : `${listing.bedrooms}BR`}</span>
+                      )}
+                      {listing.bathrooms && <span>{listing.bathrooms}BA</span>}
+                      {listing.sqft && <span>{listing.sqft}sqft</span>}
+                    </div>
+                    <p className="text-xs text-gray-400 mt-1 line-clamp-1">
+                      {listing.city}{listing.state ? `, ${listing.state}` : ''}
+                    </p>
                   </div>
                 </div>
-              )}
-            </div>
-          </section>
-        )
-      })()}
-
-      {/* 라이트박스 */}
-      {lightbox !== null && (() => {
-        const maxImages = getPlanLimits(business?.plan).maxPortfolioImages
-        const visibleItems = portfolioItems.slice(0, maxImages)
-        return (
-          <div className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4" onClick={() => setLightbox(null)}>
-            <div className="relative max-w-3xl w-full" onClick={e => e.stopPropagation()}>
-              <button onClick={() => setLightbox(null)} className="absolute -top-10 right-0 text-white text-2xl hover:opacity-70">✕</button>
-              <img src={visibleItems[lightbox].url} alt="" className="w-full max-h-[80vh] object-contain rounded-lg" />
-              {visibleItems[lightbox].caption && (
-                <p className="text-white text-sm text-center mt-3">{visibleItems[lightbox].caption}</p>
-              )}
-              <div className="flex justify-between mt-4">
-                <button
-                  onClick={() => setLightbox(lightbox > 0 ? lightbox - 1 : visibleItems.length - 1)}
-                  className="text-white text-sm px-4 py-2 bg-white/20 rounded-full hover:bg-white/30"
-                >← 이전</button>
-                <span className="text-white/60 text-sm self-center">{lightbox + 1} / {visibleItems.length}</span>
-                <button
-                  onClick={() => setLightbox(lightbox < visibleItems.length - 1 ? lightbox + 1 : 0)}
-                  className="text-white text-sm px-4 py-2 bg-white/20 rounded-full hover:bg-white/30"
-                >다음 →</button>
+              </Link>
+            ))}
+            {/* 더 많은 리스팅 안내 (소유자/관리자만) */}
+            {hasMoreListings && (isOwner || isAdmin) && (
+              <div className="flex items-center justify-center rounded-lg border border-dashed border-gray-300 bg-gray-50 aspect-[4/3]">
+                <div className="text-center px-4">
+                  <p className="text-sm text-gray-400 font-medium">+{listings.length - maxListings}개</p>
+                  <p className="text-xs text-gray-400 mt-1">플랜을 업그레이드하시면 더 많은<br/>리스팅을 표시할 수 있습니다.</p>
+                </div>
               </div>
+            )}
+          </div>
+        </section>
+      )}
+
+      {/* 일반 업체: 포트폴리오 표시 */}
+      {!isRealtor && portfolioItems.length > 0 && (
+        <section className="mb-8">
+          <h2 className="font-bold text-lg mb-3">포트폴리오</h2>
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+            {visiblePortfolio.map((item: any, i: number) => (
+              <div key={i} className="cursor-pointer group" onClick={() => setLightbox(i)}>
+                <div className="relative overflow-hidden rounded-lg border border-border">
+                  <img src={item.url} alt={item.caption || `포트폴리오 ${i + 1}`}
+                    className="w-full h-36 md:h-44 object-cover group-hover:scale-105 transition-transform duration-300" />
+                </div>
+                {item.caption && (
+                  <p className="text-xs text-muted mt-1.5 line-clamp-2">{item.caption}</p>
+                )}
+              </div>
+            ))}
+            {hasMorePortfolio && (isOwner || isAdmin) && (
+              <div className="flex items-center justify-center rounded-lg border border-dashed border-gray-300 bg-gray-50 h-36 md:h-44">
+                <div className="text-center px-4">
+                  <p className="text-sm text-gray-400 font-medium">+{portfolioItems.length - maxImages}장</p>
+                  <p className="text-xs text-gray-400 mt-1">플랜을 업그레이드하시면 더 많은<br/>포트폴리오를 올릴 수 있습니다.</p>
+                </div>
+              </div>
+            )}
+          </div>
+        </section>
+      )}
+
+      {/* 라이트박스 (포트폴리오용) */}
+      {lightbox !== null && !isRealtor && (
+        <div className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4" onClick={() => setLightbox(null)}>
+          <div className="relative max-w-3xl w-full" onClick={e => e.stopPropagation()}>
+            <button onClick={() => setLightbox(null)} className="absolute -top-10 right-0 text-white text-2xl hover:opacity-70">✕</button>
+            <img src={visiblePortfolio[lightbox]?.url} alt="" className="w-full max-h-[80vh] object-contain rounded-lg" />
+            {visiblePortfolio[lightbox]?.caption && (
+              <p className="text-white text-sm text-center mt-3">{visiblePortfolio[lightbox].caption}</p>
+            )}
+            <div className="flex justify-between mt-4">
+              <button
+                onClick={() => setLightbox(lightbox > 0 ? lightbox - 1 : visiblePortfolio.length - 1)}
+                className="text-white text-sm px-4 py-2 bg-white/20 rounded-full hover:bg-white/30"
+              >← 이전</button>
+              <span className="text-white/60 text-sm self-center">{lightbox + 1} / {visiblePortfolio.length}</span>
+              <button
+                onClick={() => setLightbox(lightbox < visiblePortfolio.length - 1 ? lightbox + 1 : 0)}
+                className="text-white text-sm px-4 py-2 bg-white/20 rounded-full hover:bg-white/30"
+              >다음 →</button>
             </div>
           </div>
-        )
-      })()}
+        </div>
+      )}
 
       {/* 작성한 글 */}
       {authorPosts.length > 0 && (
@@ -295,10 +385,6 @@ export default function BusinessDetailPage({ params }: { params: { id: string } 
           </div>
         </section>
       )}
-
-      {/* 광고 배너 */}
-      <div className="mb-8">
-</div>
 
       {/* 리뷰 섹션 */}
       <section>
@@ -357,6 +443,7 @@ export default function BusinessDetailPage({ params }: { params: { id: string } 
       {showEdit && (isOwner || isAdmin) && (
         <OwnerEditModal
           business={business}
+          isRealtor={isRealtor}
           onClose={() => setShowEdit(false)}
           onSave={() => { setShowEdit(false); fetchData() }}
         />
@@ -365,7 +452,7 @@ export default function BusinessDetailPage({ params }: { params: { id: string } 
   )
 }
 
-function OwnerEditModal({ business, onClose, onSave }: { business: any; onClose: () => void; onSave: () => void }) {
+function OwnerEditModal({ business, isRealtor, onClose, onSave }: { business: any; isRealtor: boolean; onClose: () => void; onSave: () => void }) {
   const supabase = createClient()
   const [form, setForm] = useState({
     kor_name: business.kor_name || '',
@@ -379,20 +466,20 @@ function OwnerEditModal({ business, onClose, onSave }: { business: any; onClose:
     tagline: business.tagline || '',
     description: business.description || '',
   })
-  const [heroImage, setHeroImage] = useState<string | null>(business.hero_image || null)
+  const [bannerImage, setBannerImage] = useState<string | null>(business.hero_image || null)
   const [portfolio, setPortfolio] = useState<{ url: string; caption: string }[]>(business.portfolio || [])
   const [saving, setSaving] = useState(false)
   const [uploading, setUploading] = useState(false)
 
   const update = (key: string, value: string) => setForm(f => ({ ...f, [key]: value }))
 
-  async function handleHeroUpload(e: React.ChangeEvent<HTMLInputElement>) {
+  async function handleBannerUpload(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
     if (!file) return
-    if (file.size > 2 * 1024 * 1024) { alert('이미지는 2MB 이하만 업로드 가능합니다.'); return }
+    if (file.size > 5 * 1024 * 1024) { alert('이미지는 5MB 이하만 업로드 가능합니다.'); return }
     setUploading(true)
     const url = await uploadImage(file)
-    if (url) setHeroImage(url)
+    if (url) setBannerImage(url)
     else alert('이미지 업로드에 실패했습니다.')
     setUploading(false)
     e.target.value = ''
@@ -426,7 +513,7 @@ function OwnerEditModal({ business, onClose, onSave }: { business: any; onClose:
     setSaving(true)
     const { error } = await supabase.from('businesses').update({
       ...form,
-      hero_image: heroImage,
+      hero_image: bannerImage,
       portfolio: portfolio.length > 0 ? portfolio : null,
     }).eq('id', business.id)
     if (error) {
@@ -446,24 +533,27 @@ function OwnerEditModal({ business, onClose, onSave }: { business: any; onClose:
         </div>
 
         <form onSubmit={handleSave} className="space-y-4">
-          {/* 대표 이미지 */}
+          {/* 배너 이미지 */}
           <div>
-            <label className="block text-xs font-medium text-muted mb-1">대표 이미지</label>
-            <div className="flex items-center gap-3">
-              {heroImage ? (
-                <div className="relative w-20 h-20 rounded-lg overflow-hidden border border-border">
-                  <img src={heroImage} alt="대표 이미지" className="w-full h-full object-cover" />
-                  <button type="button" onClick={() => setHeroImage(null)}
-                    className="absolute top-0.5 right-0.5 bg-black/60 text-white w-5 h-5 rounded-full text-xs flex items-center justify-center hover:bg-black/80">✕</button>
+            <label className="block text-xs font-medium text-muted mb-1">배너 이미지</label>
+            <p className="text-xs text-gray-400 mb-2">권장 비율 3:1 (예: 1200x400). 업체 대표 이미지로 자유롭게 디자인하세요.</p>
+            <div className="mb-2">
+              {bannerImage ? (
+                <div className="relative w-full rounded-lg overflow-hidden border border-border" style={{ aspectRatio: '3 / 1' }}>
+                  <img src={bannerImage} alt="배너 이미지" className="w-full h-full object-cover" />
+                  <button type="button" onClick={() => setBannerImage(null)}
+                    className="absolute top-2 right-2 bg-black/60 text-white w-6 h-6 rounded-full text-xs flex items-center justify-center hover:bg-black/80">✕</button>
                 </div>
               ) : (
-                <div className="w-20 h-20 rounded-lg border-2 border-dashed border-gray-300 flex items-center justify-center text-gray-400 text-xs">없음</div>
+                <div className="w-full rounded-lg border-2 border-dashed border-gray-300 flex items-center justify-center text-gray-400 text-sm" style={{ aspectRatio: '3 / 1' }}>
+                  배너 이미지 없음
+                </div>
               )}
-              <label className={`text-xs px-3 py-1.5 rounded-full cursor-pointer ${uploading ? 'bg-gray-200 text-gray-400' : 'bg-gray-100 text-secondary hover:bg-gray-200'}`}>
-                {uploading ? '업로드 중...' : '이미지 변경'}
-                <input type="file" accept="image/*" onChange={handleHeroUpload} className="hidden" disabled={uploading} />
-              </label>
             </div>
+            <label className={`text-xs px-3 py-1.5 rounded-full cursor-pointer ${uploading ? 'bg-gray-200 text-gray-400' : 'bg-gray-100 text-secondary hover:bg-gray-200'}`}>
+              {uploading ? '업로드 중...' : '배너 이미지 변경'}
+              <input type="file" accept="image/*" onChange={handleBannerUpload} className="hidden" disabled={uploading} />
+            </label>
           </div>
 
           {/* 업체명 */}
@@ -529,37 +619,46 @@ function OwnerEditModal({ business, onClose, onSave }: { business: any; onClose:
               className="w-full border border-border rounded-lg px-3 py-2 text-sm min-h-[80px] resize-y" maxLength={1000} />
           </div>
 
-          {/* 포트폴리오 이미지 */}
-          <div>
-            <label className="block text-xs font-medium text-muted mb-1">포트폴리오 이미지</label>
-            {portfolio.length > 0 && (
-              <div className="grid grid-cols-3 gap-2 mb-2">
-                {portfolio.map((item, i) => (
-                  <div key={i} className="relative border border-border rounded-lg overflow-hidden">
-                    <img src={item.url} alt="" className="w-full h-24 object-cover" />
-                    <button type="button" onClick={() => removePortfolioItem(i)}
-                      className="absolute top-1 right-1 bg-black/60 text-white w-5 h-5 rounded-full text-xs flex items-center justify-center hover:bg-black/80">✕</button>
-                    <input
-                      type="text"
-                      value={item.caption}
-                      onChange={e => updatePortfolioCaption(i, e.target.value)}
-                      placeholder="설명 (선택)"
-                      className="w-full px-2 py-1 text-xs border-t border-border focus:outline-none"
-                    />
-                  </div>
-                ))}
-              </div>
-            )}
-            <label className={`inline-block text-xs px-3 py-1.5 rounded-full cursor-pointer ${uploading ? 'bg-gray-200 text-gray-400' : 'bg-gray-100 text-secondary hover:bg-gray-200'}`}>
-              {uploading ? '업로드 중...' : '+ 이미지 추가'}
-              <input type="file" accept="image/*" multiple onChange={handlePortfolioUpload} className="hidden" disabled={uploading} />
-            </label>
-            <span className="text-xs text-muted ml-2">최대 2MB, 여러 장 선택 가능</span>
-          </div>
+          {/* 폨트폴리오 이미지 (부동산 제외) */}
+          {!isRealtor && (
+            <div>
+              <label className="block text-xs font-medium text-muted mb-1">포트폴리오 이미지</label>
+              {portfolio.length > 0 && (
+                <div className="grid grid-cols-3 gap-2 mb-2">
+                  {portfolio.map((item, i) => (
+                    <div key={i} className="relative border border-border rounded-lg overflow-hidden">
+                      <img src={item.url} alt="" className="w-full h-24 object-cover" />
+                      <button type="button" onClick={() => removePortfolioItem(i)}
+                        className="absolute top-1 right-1 bg-black/60 text-white w-5 h-5 rounded-full text-xs flex items-center justify-center hover:bg-black/80">✕</button>
+                      <input
+                        type="text"
+                        value={item.caption}
+                        onChange={e => updatePortfolioCaption(i, e.target.value)}
+                        placeholder="설명 (선택)"
+                        className="w-full px-2 py-1 text-xs border-t border-border focus:outline-none"
+                      />
+                    </div>
+                  ))}
+                </div>
+              )}
+              <label className={`inline-block text-xs px-3 py-1.5 rounded-full cursor-pointer ${uploading ? 'bg-gray-200 text-gray-400' : 'bg-gray-100 text-secondary hover:bg-gray-200'}`}>
+                {uploading ? '업로드 중...' : '+ 이미지 추가'}
+                <input type="file" accept="image/*" multiple onChange={handlePortfolioUpload} className="hidden" disabled={uploading} />
+              </label>
+              <span className="text-xs text-muted ml-2">최대 2MB, 여러 장 선택 가능</span>
+            </div>
+          )}
+
+          {/* 부동산 업체 안내 */}
+          {isRealtor && (
+            <div className="bg-gray-50 border border-border rounded-lg p-4">
+              <p className="text-sm text-gray-600">매물 리스팅은 <Link href="/listings/new" className="text-blue-600 hover:underline font-medium">매물 등록</Link> 페이지에서 등록하시면 이 프로필에 자동으로 표시됩니다.</p>
+            </div>
+          )}
 
           {/* 버튼 */}
           <div className="flex justify-end gap-2 pt-2">
-            <button type="button" onClick={onClose} className="px-4 py-2 text-sm text-muted hover:text-primary">취셬</button>
+            <button type="button" onClick={onClose} className="px-4 py-2 text-sm text-muted hover:text-primary">취소</button>
             <button type="submit" disabled={saving || uploading} className="bg-black text-white px-6 py-2 rounded-full text-sm hover:bg-gray-800 disabled:opacity-50">
               {saving ? '저장 중...' : '저장'}
             </button>
