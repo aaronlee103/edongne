@@ -148,7 +148,7 @@ export default function BusinessRegisterPage() {
       <h1 className="text-2xl font-bold mb-2">업체 등록</h1>
       <p className="text-muted text-sm mb-6">이동네에 업체를 등록하고 더 많은 고객을 만나보세요.</p>
 
-      {/* 등록비 안내 */}
+      {/* 등록비 숈내 */}
       <div className="bg-gray-50 border border-border rounded-xl p-5 mb-8">
         <div className="flex items-center justify-between">
           <div>
@@ -239,7 +239,7 @@ export default function BusinessRegisterPage() {
               <div>
                 <label className="block text-sm font-medium mb-1.5">상세 지역</label>
                 <input type="text" value={form.area} onChange={e => update('area', e.target.value)}
-                  placeholder="예: 팰팍, 포트리, 퀸즈" className="w-full px-4 py-2.5 border border-border rounded-lg text-sm focus:outline-none focus:border-black" />
+                  placeholder="예: 패팍, 포트리, 퀸즈" className="w-full px-4 py-2.5 border border-border rounded-lg text-sm focus:outline-none focus:border-black" />
               </div>
             </div>
 
@@ -268,12 +268,12 @@ export default function BusinessRegisterPage() {
               <p className="text-xs text-muted mb-2">업체 페이지 상단에 표시됩니다. (최대 2MB)</p>
               {heroImage ? (
                 <div className="relative inline-block">
-                  <img src={heroImage} alt="대표 이미지" className="w-full max-w-md h-48 object-cover rounded-lg border border-border" />
+                  <img src={heroImage} alt="대표 이미지" className="w-full max-w-sm sm:max-w-md h-48 object-cover rounded-lg border border-border" />
                   <button type="button" onClick={() => setHeroImage('')}
                     className="absolute top-2 right-2 w-7 h-7 bg-black/70 text-white rounded-full text-xs flex items-center justify-center hover:bg-black">✕</button>
                 </div>
               ) : (
-                <label className="inline-flex w-full max-w-md h-36 border-2 border-dashed border-border rounded-lg cursor-pointer hover:bg-gray-50 items-center justify-center">
+                <label className="inline-flex w-full max-w-sm sm:max-w-md h-36 border-2 border-dashed border-border rounded-lg cursor-pointer hover:bg-gray-50 items-center justify-center">
                   <input type="file" accept="image/*" className="hidden"
                     onChange={(e) => { const f = e.target.files?.[0]; if (f) handleImageUpload(f, setHeroImage); e.target.value = '' }} />
                   <span className="text-sm text-muted">{uploading ? '업로드 중...' : '📷 이미지를 선택하세요'}</span>
