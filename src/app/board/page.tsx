@@ -89,7 +89,7 @@ export default function BoardPage() {
       </div>
 
       {/* 카테고리 필터 */}
-      <div className="flex gap-2 mb-6 overflow-x-auto pb-2">
+      <div className="flex flex-wrap gap-2 mb-6">
         {CATEGORIES.map((cat) => (
           <button
             key={cat.key}
@@ -104,8 +104,8 @@ export default function BoardPage() {
           </button>
         ))}
 
-        {/* 구분선 */}
-        <div className="w-px bg-gray-300 mx-1 self-stretch" />
+        {/* 구분선 - 모바인에서는 숨김 */}
+        <div className="hidden sm:block w-px bg-gray-300 mx-1 self-stretch" />
 
         {/* 매물 탭 (별도 페이지 링크) */}
         {LISTING_TABS.map((tab) => (
@@ -149,7 +149,7 @@ export default function BoardPage() {
                   <div className="flex items-center gap-2 mb-1">
                     <span className="text-xs px-1.5 py-0.5 bg-gray-100 rounded text-muted">
                       {CATEGORIES.find(c => c.key === post.category)?.label || post.category}
-                   </span>
+                    </span>
                   </div>
                   <h3 className="text-sm font-medium truncate">{post.title}</h3>
                   <div className="flex items-center gap-3 mt-1.5 text-xs text-muted">
