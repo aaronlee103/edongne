@@ -40,7 +40,7 @@ export default function Footer() {
         <div className="max-w-6xl mx-auto px-4 py-8 text-center">
           <h3 className="font-bold text-lg mb-1">이동네 뉴스레터</h3>
           <p className="text-sm text-muted mb-4">매주 뉴욕·뉴저지 한인 부동산 & 생활정보를 보내드립니다</p>
-          <form onSubmit={handleSubscribe} className="flex items-center justify-center gap-2 max-w-md mx-auto">
+          <form onSubmit={handleSubscribe} className="flex items-center justify-center gap-2 max-w-sm sm:max-w-md mx-auto px-2">
             <input
               type="email"
               value={email}
