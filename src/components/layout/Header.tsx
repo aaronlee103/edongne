@@ -209,7 +209,7 @@ export default function Header() {
         )}
       </div>
 
-      {/* 카테고리 탭 + 검색 (2번째 줄) */}
+      {/* 카테고리 �m + 검색 (2번째 줄) */}
       <div className="border-t border-border bg-white">
         <div className="max-w-6xl mx-auto px-4">
           <div className="flex items-center gap-1 py-2">
@@ -218,7 +218,7 @@ export default function Header() {
                 <Link
                   key={cat.key}
                   href={cat.key === 'all' ? '/' : `/?category=${cat.key}`}
-                  className={`px-3 py-1.5 text-sm whitespace-nowrap rounded-full transition-colors ${
+                  className={`px-3 py-2 text-sm whitespace-nowrap rounded-full transition-colors ${
                     (pathname === '/' && currentCategory === cat.key) || (pathname === '/' && cat.key === 'all' && !searchParams.get('category'))
                       ? 'bg-black text-white font-medium'
                       : 'text-secondary hover:text-primary hover:bg-gray-100'
@@ -238,15 +238,15 @@ export default function Header() {
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     placeholder="검색어 입력..."
-                    className="w-40 px-3 py-1.5 text-sm border border-border rounded-full focus:outline-none focus:ring-1 focus:ring-black"
+                    className="w-32 sm:w-40 px-3 py-1.5 text-sm border border-border rounded-full focus:outline-none focus:ring-1 focus:ring-black"
                     autoFocus
                   />
-                  <button type="submit" className="p-1.5 hover:bg-gray-100 rounded-full">
+                  <button type="submit" className="p-2 hover:bg-gray-100 rounded-full">
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                     </svg>
                   </button>
-                  <button type="button" onClick={() => { setSearchOpen(false); setSearchQuery('') }} className="p-1.5 hover:bg-gray-100 rounded-full">
+                  <button type="button" onClick={() => { setSearchOpen(false); setSearchQuery('') }} className="p-2 hover:bg-gray-100 rounded-full">
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                     </svg>
@@ -255,7 +255,7 @@ export default function Header() {
               ) : (
                 <button
                   onClick={() => setSearchOpen(true)}
-                  className="flex items-center gap-1 px-3 py-1.5 text-sm text-secondary hover:text-primary hover:bg-gray-100 rounded-full transition-colors"
+                  className="flex items-center gap-1 px-3 py-2 text-sm text-secondary hover:text-primary hover:bg-gray-100 rounded-full transition-colors"
                 >
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
