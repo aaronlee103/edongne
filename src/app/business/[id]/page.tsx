@@ -235,11 +235,11 @@ export default function BusinessDetailPage({ params }: { params: { id: string } 
                   )}
                 </div>
               ))}
-              {hasMore && (
+              {hasMore && (isOwner || isAdmin) && (
                 <div className="flex items-center justify-center rounded-lg border border-dashed border-gray-300 bg-gray-50 h-36 md:h-44">
                   <div className="text-center px-4">
                     <p className="text-sm text-gray-400 font-medium">+{portfolioItems.length - maxImages}장</p>
-                    <p className="text-xs text-gray-400 mt-1">플랜을 업그레이드하시면<br/>더 많은 포트폴리오를 보실 수 있습니다.</p>
+                    <p className="text-xs text-gray-400 mt-1">플랜을 업그레이드하시면<br/>더 많은 포트폴리오를 올릴 수 있습니다.</p>
                   </div>
                 </div>
               )}
