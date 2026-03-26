@@ -1,8 +1,8 @@
 export const LISTING_LIMITS: Record<string, { maxListings: number; maxPhotos: number; maxPhotoSizeMB: number }> = {
-  basic:        { maxListings: 0,  maxPhotos: 0,  maxPhotoSizeMB: 0 },
-  premium:      { maxListings: 5,  maxPhotos: 10, maxPhotoSizeMB: 5 },
-  premium_plus: { maxListings: 20, maxPhotos: 20, maxPhotoSizeMB: 5 },
-  sponsor:      { maxListings: 50, maxPhotos: 30, maxPhotoSizeMB: 5 },
+  basic:        { maxListings: 3,  maxPhotos: 5,  maxPhotoSizeMB: 2 },
+  premium:      { maxListings: 9,  maxPhotos: 10, maxPhotoSizeMB: 5 },
+  premium_plus: { maxListings: 30, maxPhotos: 20, maxPhotoSizeMB: 5 },
+  sponsor:      { maxListings: 30, maxPhotos: 30, maxPhotoSizeMB: 5 },
 };
 
 export function getListingLimits(plan?: string) {
