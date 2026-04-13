@@ -2,8 +2,9 @@ export type UserRole = 'super' | 'editor' | 'business' | 'user'
 export type AvatarAnimal = 'bear' | 'rabbit' | 'fox' | 'cat' | 'dog' | 'owl' | 'penguin' | 'deer'
 export type PostType = 'magazine' | 'notice' | 'community'
 export type PostCategory = 'free' | 'qna' | 'info' | 'buysell' | 'jobs' | 'housing' | 'topic' | 'editor'
-export type BusinessType = 'realtor' | 'builder' | 'lawyer' | 'mortgage'
-export type BusinessPlan = 'basic' | 'pro' | 'premium'
+export type BusinessType = 'realtor' | 'builder' | 'lawyer' | 'mortgage' | 'mover'
+export type BusinessPlan = 'basic' | 'pro' | 'premium' | 'premium_plus' | 'sponsor'
+export type AdPlacementType = 'homepage_banner' | 'category_top' | 'sidebar' | 'magazine_sidebar'
 export type ReportStatus = 'pending' | 'resolved' | 'dismissed'
 
 export interface User {
@@ -96,4 +97,19 @@ export interface Bookmark {
   user_id: string
   post_id: string
   created_at: string
+}
+
+export interface AdPlacement {
+  id: string
+  business_id: string
+  placement: AdPlacementType
+  region: string
+  priority: number
+  start_date: string | null
+  end_date: string | null
+  active: boolean
+  notes: string | null
+  created_at: string
+  // joined
+  business?: Business
 }

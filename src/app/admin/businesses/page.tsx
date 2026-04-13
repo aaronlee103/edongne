@@ -12,7 +12,8 @@ function getBusinessRegionCodes(adminRegion: string): string[] {
   if (adminRegion === 'ny') return ['NY', 'NJ']
   return [adminRegion.toUpperCase()]
 }
-const PLAN_OPTIONS = ['basic', 'pro', 'premium']
+const PLAN_OPTIONS = ['basic', 'pro', 'premium', 'premium_plus', 'sponsor']
+const PLAN_PRIORITY: Record<string, number> = { basic: 0, pro: 10, premium: 20, premium_plus: 30, sponsor: 40 }
 const STATUS_OPTIONS = ['active', 'pending', 'suspended']
 
 // ─── 유저 검색 컴포넌트 (소유자 지정용) ───
@@ -203,11 +204,16 @@ export default function AdminBusinessesPage() {
 
   async function quickUpdate(id: string, field: string, value: string | boolean) {
     const parsed = value === 'true' ? true : value === 'false' ? false : value
-    const { error } = await supabase.from('businesses').update({ [field]: parsed }).eq('id', id)
+    // 플랜 변경 시 sort_priority도 함께 업데이트
+    const updates: any = { [field]: parsed }
+    if (field === 'plan' && typeof parsed === 'string') {
+      updates.sort_priority = PLAN_PRIORITY[parsed] ?? 0
+    }
+    const { error } = await supabase.from('businesses').update(updates).eq('id', id)
     if (error) {
       alert('변경 실패: ' + error.message)
     } else {
-      setBusinesses(prev => prev.map(b => b.id === id ? { ...b, [field]: parsed } : b))
+      setBusinesses(prev => prev.map(b => b.id === id ? { ...b, ...updates } : b))
     }
   }
 

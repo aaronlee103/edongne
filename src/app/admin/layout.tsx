@@ -12,6 +12,7 @@ const NAV = [
   { href: '/admin/posts', label: '게시글', icon: '📝' },
   { href: '/admin/users', label: '회원', icon: '👥' },
   { href: '/admin/businesses', label: '업체', icon: '🏢' },
+  { href: '/admin/ads', label: '광고', icon: '📢' },
   { href: '/admin/magazine', label: '매거진', icon: '📰' },
   { href: '/admin/reports', label: '신고', icon: '🚨' },
 ]

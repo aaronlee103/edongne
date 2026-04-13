@@ -34,6 +34,7 @@ export default function MoversPage() {
         .in('region', codes)
         .or('status.is.null,status.eq.active')
         .or('published.is.null,published.eq.true')
+        .order('sort_priority', { ascending: false })
         .order('created_at', { ascending: false })
       if (data) setItems(data)
       setLoading(false)

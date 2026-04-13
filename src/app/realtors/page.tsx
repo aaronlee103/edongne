@@ -41,6 +41,7 @@ export default function RealtorsPage() {
         .select('*, reviews(score)')
         .eq('type', 'realtor')
         .in('region', codes)
+        .order('sort_priority', { ascending: false })
         .order('created_at', { ascending: false });
       if (!error && data) setRealtors(data);
       setLoading(false);

@@ -44,7 +44,7 @@ export default function BusinessesContent() {
       if (selectedCategory !== 'all') {
         query = query.eq('type', selectedCategory);
       }
-      const { data, error } = await query.order('created_at', { ascending: false });
+      const { data, error } = await query.order('sort_priority', { ascending: false }).order('created_at', { ascending: false });
       if (!error && data) setBusinesses(data);
       setLoading(false);
     };
