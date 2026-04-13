@@ -17,9 +17,14 @@ export async function updateSession(request: NextRequest) {
             request.cookies.set(name, value)
           )
           supabaseResponse = NextResponse.next({ request })
-          cookiesToSet.forEach(({ name, value, options }) =>
-            supabaseResponse.cookies.set(name, value, options as any)
-          )
+          const host = request.headers.get('host') || ''
+          const isEdongne = host.includes('edongne.com')
+          cookiesToSet.forEach(({ name, value, options }) => {
+            const opts = { ...options } as any
+            // 서브도메인 간 세션 공유를 위해 .edongne.com 도메인 설정
+            if (isEdongne) opts.domain = '.edongne.com'
+            supabaseResponse.cookies.set(name, value, opts)
+          })
         },
       },
     }

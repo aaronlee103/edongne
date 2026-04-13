@@ -56,11 +56,14 @@ export async function middleware(request: NextRequest) {
 
   // Set cookie if not already set
   if (!request.cookies.get(REGION_COOKIE)?.value) {
-    response.cookies.set(REGION_COOKIE, region, {
+    const host = request.headers.get('host') || ''
+    const cookieOpts: any = {
       path: '/',
       maxAge: 31536000, // 1 year
       sameSite: 'lax',
-    })
+    }
+    if (host.includes('edongne.com')) cookieOpts.domain = '.edongne.com'
+    response.cookies.set(REGION_COOKIE, region, cookieOpts)
   }
 
   // /admin 경로 서버사이드 보호

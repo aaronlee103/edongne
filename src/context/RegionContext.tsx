@@ -35,6 +35,8 @@ export function RegionProvider({ children, initialRegion }: { children: ReactNod
   const setRegionCode = (code: string) => {
     setRegionCodeState(code)
     document.cookie = `${REGION_COOKIE}=${code}; path=/; max-age=31536000; SameSite=Lax`
+    // /admin 경로에서는 서브도메인 리다이렉트 하지 않음 (AdminRegionContext가 별도 처리)
+    if (window.location.pathname.startsWith('/admin')) return
     const hostname = window.location.hostname
     if (hostname.includes('edongne.com')) {
       const targetHost = code === DEFAULT_REGION ? 'www.edongne.com' : `${code}.edongne.com`
