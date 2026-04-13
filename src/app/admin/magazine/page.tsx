@@ -102,7 +102,7 @@ export default function AdminMagazinePage() {
           onPublish={() => { setShowEditor(false); setEditingPost(null); fetchPosts() }}
         />
       ) : (
-        <div className="space-y-3">
+        <div>
           {loading ? (
             <p className="text-center py-8 text-muted text-sm">불러오는 중...</p>
           ) : posts.length === 0 ? (
@@ -112,41 +112,93 @@ export default function AdminMagazinePage() {
                 첫 매거진 글 작성하기
               </button>
             </div>
-          ) : posts.map((post) => (
-            <div key={post.id} className="flex items-start gap-4 p-4 border border-border rounded-lg hover:bg-gray-50">
-              {post.thumbnail && (
-                <img src={post.thumbnail} alt="" className="w-20 h-14 object-cover rounded" />
+          ) : (
+            <>
+              {/* 상위 15개: 썸네일 포함 카드 */}
+              <div className="space-y-3">
+                {posts.slice(0, 15).map((post) => (
+                  <div key={post.id} className="flex items-start gap-4 p-4 border border-border rounded-lg hover:bg-gray-50">
+                    {post.thumbnail && (
+                      <img src={post.thumbnail} alt="" className="w-20 h-14 object-cover rounded" />
+                    )}
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 mb-1">
+                        <span className={`text-xs px-1.5 py-0.5 rounded ${post.type === 'notice' ? 'bg-red-100 text-red-700' : 'bg-blue-100 text-blue-700'}`}>
+                          {post.type === 'notice' ? '공지' : '매거진'}
+                        </span>
+                        <span className="text-xs text-muted">{post.category}</span>
+                      </div>
+                      <Link href={`/post/${post.id}`} className="text-sm font-medium hover:underline line-clamp-1">
+                        {post.title}
+                      </Link>
+                      <div className="flex items-center gap-3 mt-1 text-xs text-muted">
+                        <span>{new Date(post.created_at).toLocaleDateString('ko-KR')}</span>
+                        <span>조회 {post.views || 0}</span>
+                        {post.tags?.length > 0 && post.tags.map((t: string) => (
+                          <span key={t} className="bg-gray-100 px-1.5 py-0.5 rounded">#{t}</span>
+                        ))}
+                      </div>
+                    </div>
+                    <div className="flex flex-col gap-1 shrink-0 items-end">
+                      <button
+                        onClick={() => togglePublished(post.id, post.published)}
+                        className={`text-xs px-2 py-0.5 rounded-full ${post.published === false ? 'bg-gray-200 text-gray-500' : 'bg-green-100 text-green-700'}`}
+                      >
+                        {post.published === false ? '비공개' : '공개'}
+                      </button>
+                      <button onClick={() => { setEditingPost(post); setShowEditor(true) }} className="text-xs text-blue-500 hover:underline">수정</button>
+                      <button onClick={() => deletePost(post.id)} className="text-xs text-red-500 hover:underline">삭제</button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {/* 16번째부터: 번호 리스트 */}
+              {posts.length > 15 && (
+                <div className="mt-6 border border-border rounded-lg overflow-hidden">
+                  <div className="px-4 py-2.5 bg-gray-50 border-b border-border">
+                    <span className="text-xs font-medium text-muted">이전 글 ({posts.length - 15}개)</span>
+                  </div>
+                  <table className="w-full text-sm">
+                    <tbody>
+                      {posts.slice(15).map((post, idx) => (
+                        <tr key={post.id} className="border-b border-border last:border-0 hover:bg-gray-50">
+                          <td className="px-4 py-2 text-xs text-muted w-10 text-center">{idx + 16}</td>
+                          <td className="py-2 pr-2">
+                            <div className="flex items-center gap-2">
+                              <span className={`text-xs px-1.5 py-0.5 rounded shrink-0 ${post.type === 'notice' ? 'bg-red-100 text-red-700' : 'bg-blue-100 text-blue-700'}`}>
+                                {post.type === 'notice' ? '공지' : '매거진'}
+                              </span>
+                              <span className="text-xs text-muted shrink-0">{post.category}</span>
+                              <Link href={`/post/${post.id}`} className="text-sm hover:underline truncate">
+                                {post.title}
+                              </Link>
+                            </div>
+                          </td>
+                          <td className="px-2 py-2 text-xs text-muted whitespace-nowrap">{new Date(post.created_at).toLocaleDateString('ko-KR')}</td>
+                          <td className="px-2 py-2 text-xs text-muted whitespace-nowrap">조회 {post.views || 0}</td>
+                          <td className="px-2 py-2 whitespace-nowrap">
+                            <button
+                              onClick={() => togglePublished(post.id, post.published)}
+                              className={`text-xs px-2 py-0.5 rounded-full ${post.published === false ? 'bg-gray-200 text-gray-500' : 'bg-green-100 text-green-700'}`}
+                            >
+                              {post.published === false ? '비공개' : '공개'}
+                            </button>
+                          </td>
+                          <td className="px-2 py-2 whitespace-nowrap">
+                            <div className="flex gap-2">
+                              <button onClick={() => { setEditingPost(post); setShowEditor(true) }} className="text-xs text-blue-500 hover:underline">수정</button>
+                              <button onClick={() => deletePost(post.id)} className="text-xs text-red-500 hover:underline">삭제</button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
               )}
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2 mb-1">
-                  <span className={`text-xs px-1.5 py-0.5 rounded ${post.type === 'notice' ? 'bg-red-100 text-red-700' : 'bg-blue-100 text-blue-700'}`}>
-                    {post.type === 'notice' ? '공지' : '매거진'}
-                  </span>
-                  <span className="text-xs text-muted">{post.category}</span>
-                </div>
-                <Link href={`/post/${post.id}`} className="text-sm font-medium hover:underline line-clamp-1">
-                  {post.title}
-                </Link>
-                <div className="flex items-center gap-3 mt-1 text-xs text-muted">
-                  <span>{new Date(post.created_at).toLocaleDateString('ko-KR')}</span>
-                  <span>조회 {post.views || 0}</span>
-                  {post.tags?.length > 0 && post.tags.map((t: string) => (
-                    <span key={t} className="bg-gray-100 px-1.5 py-0.5 rounded">#{t}</span>
-                  ))}
-                </div>
-              </div>
-              <div className="flex flex-col gap-1 shrink-0 items-end">
-                <button
-                  onClick={() => togglePublished(post.id, post.published)}
-                  className={`text-xs px-2 py-0.5 rounded-full ${post.published === false ? 'bg-gray-200 text-gray-500' : 'bg-green-100 text-green-700'}`}
-                >
-                  {post.published === false ? '비공개' : '공개'}
-                </button>
-                <button onClick={() => { setEditingPost(post); setShowEditor(true) }} className="text-xs text-blue-500 hover:underline">수정</button>
-                <button onClick={() => deletePost(post.id)} className="text-xs text-red-500 hover:underline">삭제</button>
-              </div>
-            </div>
-          ))}
+            </>
+          )}
         </div>
       )}
     </div>
