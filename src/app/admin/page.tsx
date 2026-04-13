@@ -3,9 +3,20 @@
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase-client'
+import { useAdminRegion } from '@/context/AdminRegionContext'
+import { REGIONS } from '@/lib/regions'
+
+function regionFilterStr(selectedRegion: string) {
+  if (selectedRegion === 'ny') {
+    return `region.eq.${selectedRegion},region.eq.all,region.is.null`
+  }
+  return `region.eq.${selectedRegion},region.eq.all`
+}
 
 export default function AdminDashboard() {
   const supabase = createClient()
+  const { selectedRegion } = useAdminRegion()
+  const regionName = REGIONS.find(r => r.code === selectedRegion)?.name_ko || selectedRegion
   const [stats, setStats] = useState({ posts: 0, users: 0, businesses: 0, reports: 0 })
   const [recentPosts, setRecentPosts] = useState<any[]>([])
   const [viewStats, setViewStats] = useState({ today: 0, week: 0, total: 0 })
@@ -15,11 +26,12 @@ export default function AdminDashboard() {
     fetchStats()
     fetchRecentPosts()
     fetchViewStats()
-  }, [])
+  }, [selectedRegion])
 
   async function fetchStats() {
+    const rf = regionFilterStr(selectedRegion)
     const [posts, businesses, reports, usersRes] = await Promise.all([
-      supabase.from('posts').select('id', { count: 'exact', head: true }),
+      supabase.from('posts').select('id', { count: 'exact', head: true }).or(rf),
       supabase.from('businesses').select('id', { count: 'exact', head: true }),
       supabase.from('reports').select('id', { count: 'exact', head: true }),
       supabase.from('users').select('id', { count: 'exact', head: true }),
@@ -36,6 +48,7 @@ export default function AdminDashboard() {
     const { data } = await supabase
       .from('posts')
       .select('*')
+      .or(regionFilterStr(selectedRegion))
       .order('created_at', { ascending: false })
       .limit(5)
     if (data) setRecentPosts(data)
@@ -145,7 +158,8 @@ export default function AdminDashboard() {
 
   return (
     <div>
-      <h1 className="text-2xl font-bold mb-6">대시보드</h1>
+      <h1 className="text-2xl font-bold mb-1">대시보드</h1>
+      <p className="text-sm text-muted mb-6">{regionName} 관리</p>
 
       {/* 통계 카드 */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">

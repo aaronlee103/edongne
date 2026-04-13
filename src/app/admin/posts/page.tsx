@@ -3,25 +3,33 @@
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase-client'
+import { useAdminRegion } from '@/context/AdminRegionContext'
 
 const CATEGORIES: Record<string, string> = {
   free: '자유', qna: '질문답변', info: '정보', buysell: '사고팔고',
   jobs: '구인구직', housing: '렌트/룸메', topic: '토픽', editor: '에디터',
 }
 
+function regionFilterStr(selectedRegion: string) {
+  if (selectedRegion === 'ny') return `region.eq.${selectedRegion},region.eq.all,region.is.null`
+  return `region.eq.${selectedRegion},region.eq.all`
+}
+
 export default function AdminPostsPage() {
   const supabase = createClient()
+  const { selectedRegion } = useAdminRegion()
   const [posts, setPosts] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [filter, setFilter] = useState('all')
 
-  useEffect(() => { fetchPosts() }, [filter])
+  useEffect(() => { fetchPosts() }, [filter, selectedRegion])
 
   async function fetchPosts() {
     setLoading(true)
     let query = supabase
       .from('posts')
       .select('*, comments(id)')
+      .or(regionFilterStr(selectedRegion))
       .order('created_at', { ascending: false })
       .limit(50)
 

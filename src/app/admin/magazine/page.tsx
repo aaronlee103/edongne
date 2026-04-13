@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from 'react'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase-client'
 import { uploadImage } from '@/lib/upload'
+import { useAdminRegion } from '@/context/AdminRegionContext'
 
 const MAGAZINE_CATEGORIES = [
   { key: 'editor', label: '에디터 추천' },
@@ -17,15 +18,21 @@ const MAGAZINE_CATEGORIES = [
   { key: 'info', label: '뉴스' },
 ]
 
+function regionFilterStr(selectedRegion: string) {
+  if (selectedRegion === 'ny') return `region.eq.${selectedRegion},region.eq.all,region.is.null`
+  return `region.eq.${selectedRegion},region.eq.all`
+}
+
 export default function AdminMagazinePage() {
   const supabase = createClient()
+  const { selectedRegion } = useAdminRegion()
   const [posts, setPosts] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [showEditor, setShowEditor] = useState(false)
   const [editingPost, setEditingPost] = useState<any>(null)
   const [filterCat, setFilterCat] = useState('all')
 
-  useEffect(() => { fetchPosts() }, [filterCat])
+  useEffect(() => { fetchPosts() }, [filterCat, selectedRegion])
 
   async function fetchPosts() {
     setLoading(true)
@@ -33,6 +40,7 @@ export default function AdminMagazinePage() {
       .from('posts')
       .select('*')
       .in('type', ['magazine', 'notice'])
+      .or(regionFilterStr(selectedRegion))
       .order('created_at', { ascending: false })
       .limit(50)
     if (filterCat !== 'all') query = query.eq('category', filterCat)
