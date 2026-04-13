@@ -159,11 +159,17 @@ function HomeContent() {
     if (data) setWeeklyPopular(data)
   }
 
+  function getBusinessRegionCodes(rc: string): string[] {
+    if (rc === DEFAULT_REGION) return ['NY', 'NJ']
+    return [rc.toUpperCase()]
+  }
+
   async function fetchBusinessCounts() {
     const types = ['realtor', 'builder', 'lawyer', 'mortgage', 'mover'] as const
+    const codes = getBusinessRegionCodes(regionCode)
     const counts: any = {}
     for (const t of types) {
-      const { count } = await supabase.from('businesses').select('id', { count: 'exact', head: true }).eq('type', t)
+      const { count } = await supabase.from('businesses').select('id', { count: 'exact', head: true }).eq('type', t).in('region', codes)
       counts[t] = count || 0
     }
     setBusinessCounts(counts)
