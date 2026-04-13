@@ -3,6 +3,7 @@
 import { useEffect, useState, useRef } from 'react';
 import { createClient } from '@/lib/supabase-client';
 import { useRouter } from 'next/navigation';
+import Image from 'next/image';
 import { getListingLimits, canCreateListing } from '@/lib/listingLimits';
 import Link from 'next/link';
 
@@ -411,7 +412,7 @@ export default function NewListingPage() {
             <div className="grid grid-cols-4 gap-2 mb-3">
               {previews.map((src, i) => (
                 <div key={i} className="relative group aspect-square">
-                  <img src={src} alt="" className="w-full h-full object-cover rounded-lg" />
+                  <Image src={src} alt="" width={200} height={200} className="w-full h-full object-cover rounded-lg" unoptimized />
                   <button
                     type="button"
                     onClick={() => removePhoto(i)}

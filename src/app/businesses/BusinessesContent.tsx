@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState, useMemo } from 'react';
+import Image from 'next/image';
 import { useSearchParams } from 'next/navigation';
 import { createClient } from '@/lib/supabase-client';
 import Link from 'next/link';
@@ -178,10 +179,12 @@ export default function BusinessesContent() {
               <Link href={`/business/${biz.id}`} key={biz.id}>
                 <div className="border rounded-xl overflow-hidden hover:shadow-lg transition cursor-pointer bg-white">
                   {biz.hero_image && (
-                    <div className="w-full h-48 overflow-hidden">
-                      <img
+                    <div className="w-full h-48 overflow-hidden relative">
+                      <Image
                         src={biz.hero_image}
                         alt={biz.kor_name}
+                        fill
+                        sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
                         className="w-full h-full object-cover"
                       />
                     </div>

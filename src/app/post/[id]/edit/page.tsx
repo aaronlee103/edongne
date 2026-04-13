@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react'
 import { useParams, useRouter } from 'next/navigation'
+import Image from 'next/image'
 import { createClient } from '@/lib/supabase-client'
 import { uploadImage } from '@/lib/upload'
 
@@ -245,7 +246,7 @@ export default function EditPostPage() {
             <label className="block text-sm font-medium mb-1.5">대표 이미지</label>
             {thumbnail ? (
               <div className="relative inline-block">
-                <img src={thumbnail} alt="썸네일" className="w-48 h-32 object-cover rounded-lg border border-border" />
+                <Image src={thumbnail} alt="썸네일" width={192} height={128} className="object-cover rounded-lg border border-border" unoptimized />
                 <button
                   type="button"
                   onClick={() => setThumbnail('')}

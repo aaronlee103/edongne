@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { createClient } from '@/lib/supabase-client'
 import { useAdminRegion } from '@/context/AdminRegionContext'
+import { uploadImage } from '@/lib/upload'
 
 // 지역 매핑: admin selectedRegion(소문자) → businesses 테이블 region(대문자)
 function getBusinessRegionCodes(adminRegion: string): string[] {
@@ -19,6 +20,14 @@ const PLACEMENT_LABELS: Record<string, string> = {
 }
 
 const PLACEMENT_OPTIONS = ['homepage_banner', 'category_top', 'sidebar', 'magazine_sidebar']
+
+// 배치별 권장 이미지 사이즈
+const PLACEMENT_IMAGE_SIZES: Record<string, { width: number; height: number; label: string }> = {
+  homepage_banner: { width: 1200, height: 300, label: '1200 x 300 px' },
+  category_top: { width: 728, height: 90, label: '728 x 90 px' },
+  sidebar: { width: 300, height: 250, label: '300 x 250 px' },
+  magazine_sidebar: { width: 300, height: 600, label: '300 x 600 px' },
+}
 
 // 배치 상태 확인 함수
 function isExpired(endDate: string | null): boolean {
@@ -52,12 +61,16 @@ function AddAdPlacementForm({
     end_date: '',
     notes: '',
     active: true,
+    image_url: '',
   })
   const [businesses, setBusinesses] = useState<any[]>([])
   const [loading, setLoading] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
   const [showDropdown, setShowDropdown] = useState(false)
   const [saving, setSaving] = useState(false)
+  const [uploading, setUploading] = useState(false)
+  const [imagePreview, setImagePreview] = useState<string | null>(null)
+  const fileInputRef = useRef<HTMLInputElement>(null)
   const wrapperRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -92,6 +105,32 @@ function AddAdPlacementForm({
     setLoading(false)
   }
 
+  async function handleImageUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    // 미리보기 생성
+    const reader = new FileReader()
+    reader.onload = (ev) => setImagePreview(ev.target?.result as string)
+    reader.readAsDataURL(file)
+
+    setUploading(true)
+    const url = await uploadImage(file)
+    if (url) {
+      setForm(f => ({ ...f, image_url: url }))
+    } else {
+      alert('이미지 업로드에 실패했습니다')
+      setImagePreview(null)
+    }
+    setUploading(false)
+  }
+
+  function handleRemoveImage() {
+    setForm(f => ({ ...f, image_url: '' }))
+    setImagePreview(null)
+    if (fileInputRef.current) fileInputRef.current.value = ''
+  }
+
   function handleSelectBusiness(business: any) {
     setForm(f => ({ ...f, business_id: business.id }))
     setSearchQuery(business.kor_name)
@@ -124,6 +163,7 @@ function AddAdPlacementForm({
         end_date: form.end_date,
         notes: form.notes,
         active: form.active,
+        image_url: form.image_url || null,
       },
     ])
 
@@ -138,8 +178,11 @@ function AddAdPlacementForm({
         end_date: '',
         notes: '',
         active: true,
+        image_url: '',
       })
       setSearchQuery('')
+      setImagePreview(null)
+      if (fileInputRef.current) fileInputRef.current.value = ''
       onAdd()
     }
     setSaving(false)
@@ -228,7 +271,50 @@ function AddAdPlacementForm({
             <span className="text-sm font-medium text-muted">활성</span>
           </label>
         </div>
+      </div>
 
+      {/* 광고 이미지 업로드 */}
+      <div className="mb-4">
+        <label className="block text-xs font-medium text-muted mb-2">광고 이미지</label>
+        <div className="flex items-center gap-2 mb-2">
+          <span className="inline-flex items-center gap-1 bg-blue-50 text-blue-700 text-xs px-2 py-1 rounded">
+            권장 사이즈: {PLACEMENT_IMAGE_SIZES[form.placement]?.label}
+          </span>
+        </div>
+        <div className="flex items-start gap-4">
+          <div className="flex-1">
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              onChange={handleImageUpload}
+              disabled={uploading}
+              className="w-full border border-border rounded-lg px-3 py-2 text-sm file:mr-3 file:py-1 file:px-3 file:rounded-full file:border-0 file:text-xs file:bg-black file:text-white file:cursor-pointer hover:file:bg-gray-800"
+            />
+            {uploading && <p className="text-xs text-blue-600 mt-1">업로드 중...</p>}
+            {form.image_url && !uploading && <p className="text-xs text-green-600 mt-1">이미지 업로드 완료</p>}
+          </div>
+          {(imagePreview || form.image_url) && (
+            <div className="relative flex-shrink-0">
+              <img
+                src={imagePreview || form.image_url}
+                alt="광고 미리보기"
+                className="h-20 rounded border border-border object-contain bg-gray-50"
+                style={{ maxWidth: '200px' }}
+              />
+              <button
+                type="button"
+                onClick={handleRemoveImage}
+                className="absolute -top-2 -right-2 w-5 h-5 bg-red-500 text-white rounded-full text-xs flex items-center justify-center hover:bg-red-600"
+              >
+                ×
+              </button>
+            </div>
+          )}
+        </div>
+      </div>
+
+      <div className="grid grid-cols-2 gap-4 mb-4">
         {/* 시작 날짜 */}
         <div>
           <label className="block text-xs font-medium text-muted mb-2">시작 날짜 *</label>
@@ -299,8 +385,35 @@ function EditAdPlacementModal({
     end_date: ad.end_date?.split('T')[0] || '',
     notes: ad.notes || '',
     active: ad.active,
+    image_url: ad.image_url || '',
   })
   const [saving, setSaving] = useState(false)
+  const [uploading, setUploading] = useState(false)
+  const [imagePreview, setImagePreview] = useState<string | null>(null)
+  const editFileInputRef = useRef<HTMLInputElement>(null)
+
+  async function handleEditImageUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (!file) return
+    const reader = new FileReader()
+    reader.onload = (ev) => setImagePreview(ev.target?.result as string)
+    reader.readAsDataURL(file)
+    setUploading(true)
+    const url = await uploadImage(file)
+    if (url) {
+      setForm(f => ({ ...f, image_url: url }))
+    } else {
+      alert('이미지 업로드에 실패했습니다')
+      setImagePreview(null)
+    }
+    setUploading(false)
+  }
+
+  function handleEditRemoveImage() {
+    setForm(f => ({ ...f, image_url: '' }))
+    setImagePreview(null)
+    if (editFileInputRef.current) editFileInputRef.current.value = ''
+  }
 
   async function handleSave(e: React.FormEvent) {
     e.preventDefault()
@@ -316,6 +429,7 @@ function EditAdPlacementModal({
         end_date: form.end_date,
         notes: form.notes,
         active: form.active,
+        image_url: form.image_url || null,
       })
       .eq('id', ad.id)
 
@@ -384,6 +498,46 @@ function EditAdPlacementModal({
                 </option>
               ))}
             </select>
+          </div>
+
+          {/* 광고 이미지 */}
+          <div>
+            <label className="block text-xs font-medium text-muted mb-2">광고 이미지</label>
+            <div className="flex items-center gap-2 mb-2">
+              <span className="inline-flex items-center gap-1 bg-blue-50 text-blue-700 text-xs px-2 py-1 rounded">
+                권장 사이즈: {PLACEMENT_IMAGE_SIZES[form.placement]?.label}
+              </span>
+            </div>
+            <div className="flex items-start gap-4">
+              <div className="flex-1">
+                <input
+                  ref={editFileInputRef}
+                  type="file"
+                  accept="image/*"
+                  onChange={handleEditImageUpload}
+                  disabled={uploading}
+                  className="w-full border border-border rounded-lg px-3 py-2 text-sm file:mr-3 file:py-1 file:px-3 file:rounded-full file:border-0 file:text-xs file:bg-black file:text-white file:cursor-pointer hover:file:bg-gray-800"
+                />
+                {uploading && <p className="text-xs text-blue-600 mt-1">업로드 중...</p>}
+              </div>
+              {(imagePreview || form.image_url) && (
+                <div className="relative flex-shrink-0">
+                  <img
+                    src={imagePreview || form.image_url}
+                    alt="광고 미리보기"
+                    className="h-20 rounded border border-border object-contain bg-gray-50"
+                    style={{ maxWidth: '200px' }}
+                  />
+                  <button
+                    type="button"
+                    onClick={handleEditRemoveImage}
+                    className="absolute -top-2 -right-2 w-5 h-5 bg-red-500 text-white rounded-full text-xs flex items-center justify-center hover:bg-red-600"
+                  >
+                    ×
+                  </button>
+                </div>
+              )}
+            </div>
           </div>
 
           <div className="grid grid-cols-2 gap-4">
@@ -600,6 +754,7 @@ export default function AdminAdsPage() {
           <thead className="bg-bg-light border-b border-border">
             <tr>
               <th className="text-left px-4 py-2 font-medium text-muted">업체명</th>
+              <th className="text-left px-4 py-2 font-medium text-muted w-16">이미지</th>
               <th className="text-left px-4 py-2 font-medium text-muted w-32">배치 위치</th>
               <th className="text-left px-4 py-2 font-medium text-muted w-16">지역</th>
               <th className="text-left px-4 py-2 font-medium text-muted w-16">우선순위</th>
@@ -611,13 +766,13 @@ export default function AdminAdsPage() {
           <tbody>
             {loading ? (
               <tr>
-                <td colSpan={7} className="px-4 py-8 text-center text-muted">
+                <td colSpan={8} className="px-4 py-8 text-center text-muted">
                   불러오는 중...
                 </td>
               </tr>
             ) : tabPlacements.length === 0 ? (
               <tr>
-                <td colSpan={7} className="px-4 py-8 text-center text-muted">
+                <td colSpan={8} className="px-4 py-8 text-center text-muted">
                   광고가 없습니다
                 </td>
               </tr>
@@ -638,6 +793,17 @@ export default function AdminAdsPage() {
                       <div className="font-medium">{business?.kor_name || 'N/A'}</div>
                       {business?.eng_name && (
                         <div className="text-xs text-muted">{business.eng_name}</div>
+                      )}
+                    </td>
+                    <td className="px-4 py-2.5">
+                      {placement.image_url ? (
+                        <img
+                          src={placement.image_url}
+                          alt="광고"
+                          className="h-10 w-14 object-cover rounded border border-border"
+                        />
+                      ) : (
+                        <span className="text-xs text-muted">없음</span>
                       )}
                     </td>
                     <td className="px-4 py-2.5 text-xs">

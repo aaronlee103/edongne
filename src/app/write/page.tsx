@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
+import Image from 'next/image'
 import { createClient } from '@/lib/supabase-client'
 import { uploadImage } from '@/lib/upload'
 import { useRegion } from '@/context/RegionContext'
@@ -153,7 +154,7 @@ export default function WritePage() {
           <label className="block text-sm font-medium mb-1.5">이미지 (선택)</label>
           {imagePreview ? (
             <div className="relative inline-block">
-              <img src={imagePreview} alt="미리보기" className="max-h-48 rounded-lg border border-border" />
+              <Image src={imagePreview} alt="미리보기" width={200} height={192} className="rounded-lg border border-border" unoptimized />
               <button
                 type="button"
                 onClick={removeImage}

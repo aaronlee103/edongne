@@ -1,6 +1,7 @@
 'use client'
 
 import Link from 'next/link'
+import Image from 'next/image'
 import { useState, useEffect } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase-client'
@@ -109,27 +110,43 @@ export default function PostContent() {
   const [relatedPosts, setRelatedPosts] = useState<any[]>([])
 
   useEffect(() => {
-    supabase.auth.getUser().then(({ data }) => {
-      setUser(data.user)
-      if (data.user) {
-        supabase.from('users').select('role').eq('id', data.user.id).single().then(({ data: u }) => { if (u?.role) setRole(u.role) })
-        checkUserLike(data.user.id)
+    // 병렬로 모든 초기 데이터 로드
+    async function loadAll() {
+      const [authResult, postResult, commentsResult, likesResult] = await Promise.all([
+        supabase.auth.getUser(),
+        supabase.from('posts').select('*, users(nickname, avatar_animal), votes(value)').eq('id', postId).single(),
+        supabase.from('comments').select('*, users(nickname, avatar_animal)').eq('post_id', postId).order('created_at', { ascending: true }),
+        supabase.from('votes').select('id, user_id').eq('post_id', postId).eq('value', 1),
+      ])
+
+      // 유저 정보 처리
+      const currentUser = authResult.data.user
+      setUser(currentUser)
+      if (currentUser) {
+        const { data: u } = await supabase.from('users').select('role').eq('id', currentUser.id).single()
+        if (u?.role) setRole(u.role)
+        setLiked(!!likesResult.data?.some((v: any) => v.user_id === currentUser.id))
       }
-    })
-    fetchPost()
-    fetchComments()
-    fetchLikeCount()
+
+      // 포스트 처리
+      if (postResult.data) {
+        const data = postResult.data
+        setPost({ ...data, vote_score: data.votes?.reduce((sum: number, v: any) => sum + v.value, 0) || 0 })
+        supabase.from('posts').update({ views: (data.views || 0) + 1 }).eq('id', postId)
+        // 관련 글은 카테고리를 알아야 하므로 여기서 호출
+        const { data: related } = await supabase.from('posts').select('id, title, thumbnail, created_at').eq('category', data.category).neq('id', postId).or('published.is.null,published.eq.true').order('created_at', { ascending: false }).limit(4)
+        if (related) setRelatedPosts(related)
+      }
+
+      // 댓글 & 좋아요 처리
+      if (commentsResult.data) setComments(commentsResult.data)
+      setLikeCount(likesResult.data?.length || 0)
+      setLoading(false)
+    }
+    loadAll()
   }, [postId])
 
-  async function checkUserLike(userId: string) {
-    const { data } = await supabase.from('votes').select('id').eq('post_id', postId).eq('user_id', userId).eq('value', 1).limit(1)
-    setLiked(!!data && data.length > 0)
-  }
-
-  async function fetchLikeCount() {
-    const { data } = await supabase.from('votes').select('id').eq('post_id', postId).eq('value', 1)
-    setLikeCount(data?.length || 0)
-  }
+  // checkUserLike와 fetchLikeCount는 초기 loadAll()에 통합됨
 
   async function handleLike() {
     if (!user) return alert('로그인이 필요합니다.')
@@ -156,17 +173,7 @@ export default function PostContent() {
     else router.push('/board')
   }
 
-  async function fetchPost() {
-    const { data } = await supabase.from('posts').select('*, users(nickname, avatar_animal), votes(value)').eq('id', postId).single()
-    if (data) {
-      setPost({ ...data, vote_score: data.votes?.reduce((sum: number, v: any) => sum + v.value, 0) || 0 })
-      await supabase.from('posts').update({ views: (data.views || 0) + 1 }).eq('id', postId)
-      // Fetch related posts by same category
-      const { data: related } = await supabase.from('posts').select('id, title, thumbnail, created_at').eq('category', data.category).neq('id', postId).or('published.is.null,published.eq.true').order('created_at', { ascending: false }).limit(4)
-      if (related) setRelatedPosts(related)
-    }
-    setLoading(false)
-  }
+  // fetchPost는 초기 loadAll()에 통합됨
 
   async function fetchComments() {
     const { data } = await supabase.from('comments').select('*, users(nickname, avatar_animal)').eq('post_id', postId).order('created_at', { ascending: true })
@@ -286,7 +293,7 @@ export default function PostContent() {
                 <div className="space-y-3">
                   {relatedPosts.map(rp => (
                     <Link key={rp.id} href={`/post/${rp.id}`} className="block group">
-                      {rp.thumbnail && <img src={rp.thumbnail} alt="" className="w-full h-24 object-cover rounded-lg mb-1" />}
+                      {rp.thumbnail && <div className="relative w-full h-24 mb-1"><Image src={rp.thumbnail} alt="" fill sizes="240px" className="object-cover rounded-lg" /></div>}
                       <p className="text-xs font-medium line-clamp-2 group-hover:text-secondary">{rp.title}</p>
                       <p className="text-xs text-muted mt-0.5">{timeAgo(rp.created_at)}</p>
                     </Link>

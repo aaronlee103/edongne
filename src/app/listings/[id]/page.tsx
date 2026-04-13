@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import Image from 'next/image';
 import { createClient } from '@/lib/supabase-client';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
@@ -48,9 +49,9 @@ export default function ListingDetailPage() {
 
       {/* 사진 갤러리 */}
       <div className="mb-6">
-        <div className="aspect-[16/9] bg-gray-100 rounded-lg overflow-hidden mb-2">
+        <div className="aspect-[16/9] bg-gray-100 rounded-lg overflow-hidden mb-2 relative">
           {listing.photos?.[mainPhoto] ? (
-            <img src={listing.photos[mainPhoto]} alt="" className="w-full h-full object-cover" />
+            <Image src={listing.photos[mainPhoto]} alt="" fill sizes="(max-width: 896px) 100vw, 896px" className="w-full h-full object-cover" />
           ) : (
             <div className="w-full h-full flex items-center justify-center text-gray-300 text-6xl">🏠</div>
           )}
@@ -61,11 +62,11 @@ export default function ListingDetailPage() {
               <button
                 key={i}
                 onClick={() => setMainPhoto(i)}
-                className={`flex-shrink-0 w-20 h-16 rounded-lg overflow-hidden border-2 ${
+                className={`flex-shrink-0 w-20 h-16 rounded-lg overflow-hidden border-2 relative ${
                   mainPhoto === i ? 'border-black' : 'border-transparent'
                 }`}
               >
-                <img src={url} alt="" className="w-full h-full object-cover" />
+                <Image src={url} alt="" fill sizes="80px" className="w-full h-full object-cover" />
               </button>
             ))}
           </div>
@@ -135,7 +136,7 @@ export default function ListingDetailPage() {
               <div>
                 <div className="flex items-center gap-3 mb-3">
                   {listing.businesses.image_url ? (
-                    <img src={listing.businesses.image_url} alt="" className="w-12 h-12 rounded-full object-cover" />
+                    <Image src={listing.businesses.image_url} alt="" width={48} height={48} className="rounded-full object-cover" />
                   ) : (
                     <div className="w-12 h-12 rounded-full bg-gray-200 flex items-center justify-center font-bold text-gray-400">
                       {listing.businesses.name?.[0]}

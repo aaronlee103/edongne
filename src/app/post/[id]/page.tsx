@@ -2,6 +2,9 @@ import { Metadata } from 'next'
 import { createServerSupabase } from '@/lib/supabase-server'
 import PostContent from './PostContent'
 
+// ISR: 60초마다 재생성
+export const revalidate = 60
+
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://www.edongne.com'
 
 const CATEGORY_LABELS: Record<string, string> = {

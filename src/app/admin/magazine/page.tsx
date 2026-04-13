@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react'
 import Link from 'next/link'
+import Image from 'next/image'
 import { createClient } from '@/lib/supabase-client'
 import { uploadImage } from '@/lib/upload'
 import { useAdminRegion } from '@/context/AdminRegionContext'
@@ -119,7 +120,7 @@ export default function AdminMagazinePage() {
                 {posts.slice(0, 15).map((post) => (
                   <div key={post.id} className="flex items-start gap-4 p-4 border border-border rounded-lg hover:bg-gray-50">
                     {post.thumbnail && (
-                      <img src={post.thumbnail} alt="" className="w-20 h-14 object-cover rounded" />
+                      <Image src={post.thumbnail} alt="" width={80} height={56} className="object-cover rounded" unoptimized />
                     )}
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 mb-1">
@@ -348,7 +349,7 @@ function MagazineEditor({ supabase, editingPost, onPublish }: { supabase: any; e
         <label className="block text-sm font-medium mb-1.5">대표 이미지</label>
         {thumbnail ? (
           <div className="relative inline-block">
-            <img src={thumbnail} alt="썸네일" className="w-48 h-32 object-cover rounded-lg border border-border" />
+            <Image src={thumbnail} alt="썸네일" width={192} height={128} className="object-cover rounded-lg border border-border" unoptimized />
             <button
               onClick={() => setThumbnail('')}
               className="absolute -top-2 -right-2 w-6 h-6 bg-black text-white rounded-full text-xs flex items-center justify-center"

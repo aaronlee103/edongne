@@ -1,5 +1,6 @@
 'use client'
 
+import Image from 'next/image'
 import { useEffect, useState, useMemo } from 'react'
 import { createClient } from '@/lib/supabase-client'
 import { useRegion } from '@/context/RegionContext'
@@ -125,8 +126,8 @@ export default function LawyersPage() {
               <Link href={`/business/${b.id}`} key={b.id}>
                 <div className="border rounded-xl overflow-hidden hover:shadow-lg transition cursor-pointer bg-white">
                   {b.hero_image && (
-                    <div className="w-full h-48 overflow-hidden">
-                      <img src={b.hero_image} alt={b.kor_name} className="w-full h-full object-cover" />
+                    <div className="w-full h-48 overflow-hidden relative">
+                      <Image src={b.hero_image} alt={b.kor_name} fill className="object-cover" sizes="(max-width: 768px) 100vw, 300px" />
                     </div>
                   )}
                   <div className="p-4">

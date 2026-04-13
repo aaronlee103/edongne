@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect, useRef } from 'react'
+import Image from 'next/image'
 import { createClient } from '@/lib/supabase-client'
 import { uploadImage } from '@/lib/upload'
 import { useAdminRegion } from '@/context/AdminRegionContext'
@@ -465,7 +466,7 @@ function EditBusinessModal({ supabase, business, onClose, onSave }: { supabase: 
             <div className="flex items-center gap-3">
               {heroImage ? (
                 <div className="relative w-20 h-20 rounded-lg overflow-hidden border border-border">
-                  <img src={heroImage} alt="대표 이미지" className="w-full h-full object-cover" />
+                  <Image src={heroImage} alt="대표 이미지" width={80} height={80} className="w-full h-full object-cover" unoptimized />
                   <button type="button" onClick={() => setHeroImage(null)}
                     className="absolute top-0.5 right-0.5 bg-black/60 text-white w-5 h-5 rounded-full text-xs flex items-center justify-center hover:bg-black/80">✕</button>
                 </div>
@@ -555,7 +556,7 @@ function EditBusinessModal({ supabase, business, onClose, onSave }: { supabase: 
               <div className="grid grid-cols-3 gap-2 mb-2">
                 {portfolio.map((item, i) => (
                   <div key={i} className="relative border border-border rounded-lg overflow-hidden">
-                    <img src={item.url} alt="" className="w-full h-24 object-cover" />
+                    <Image src={item.url} alt="" width={120} height={96} className="w-full h-24 object-cover" unoptimized />
                     <button type="button" onClick={() => removePortfolioItem(i)}
                       className="absolute top-1 right-1 bg-black/60 text-white w-5 h-5 rounded-full text-xs flex items-center justify-center hover:bg-black/80">✕</button>
                     <input

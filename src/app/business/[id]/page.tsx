@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import Image from 'next/image'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase-client'
@@ -236,9 +237,11 @@ export default function BusinessDetailPage({ params }: { params: { id: string } 
       {business.hero_image ? (
         <div className="rounded-b-xl overflow-hidden mb-8 border border-t-0 border-border">
           <div className="relative w-full" style={{ aspectRatio: '3 / 1' }}>
-            <img
+            <Image
               src={business.hero_image}
               alt={`${business.kor_name} 배너`}
+              fill
+              sizes="(max-width: 896px) 100vw, 896px"
               className="w-full h-full object-cover"
             />
           </div>
@@ -268,9 +271,11 @@ export default function BusinessDetailPage({ params }: { params: { id: string } 
                   {/* 사진 + 뱃지 */}
                   <div className="relative aspect-[4/3] bg-gray-100">
                     {listing.photos?.[0] ? (
-                      <img
+                      <Image
                         src={listing.photos[0]}
                         alt={listing.title}
+                        fill
+                        sizes="(max-width: 640px) 50vw, (max-width: 896px) 33vw, 280px"
                         className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                       />
                     ) : (
@@ -321,9 +326,9 @@ export default function BusinessDetailPage({ params }: { params: { id: string } 
           <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
             {visiblePortfolio.map((item: any, i: number) => (
               <div key={i} className="cursor-pointer group" onClick={() => setLightbox(i)}>
-                <div className="relative overflow-hidden rounded-lg border border-border">
-                  <img src={item.url} alt={item.caption || `포트폴리오 ${i + 1}`}
-                    className="w-full h-36 md:h-44 object-cover group-hover:scale-105 transition-transform duration-300" />
+                <div className="relative overflow-hidden rounded-lg border border-border h-36 md:h-44">
+                  <Image src={item.url} alt={item.caption || `포트폴리오 ${i + 1}`}
+                    fill sizes="(max-width: 640px) 50vw, (max-width: 896px) 33vw, 280px" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
                 </div>
                 {item.caption && (
                   <p className="text-xs text-muted mt-1.5 line-clamp-2">{item.caption}</p>
@@ -374,7 +379,7 @@ export default function BusinessDetailPage({ params }: { params: { id: string } 
             {authorPosts.map((ap) => (
               <Link key={ap.id} href={`/post/${ap.id}`} className="flex gap-3 border border-border rounded-lg p-3 hover:shadow-md transition-all group">
                 {ap.thumbnail && (
-                  <img src={ap.thumbnail} alt="" className="w-20 h-16 object-cover rounded flex-shrink-0" />
+                  <Image src={ap.thumbnail} alt="" width={80} height={64} className="object-cover rounded flex-shrink-0" />
                 )}
                 <div className="min-w-0 flex-1">
                   <p className="text-sm font-medium line-clamp-2 group-hover:text-secondary">{ap.title}</p>
@@ -540,7 +545,7 @@ function OwnerEditModal({ business, isRealtor, onClose, onSave }: { business: an
             <div className="mb-2">
               {bannerImage ? (
                 <div className="relative w-full rounded-lg overflow-hidden border border-border" style={{ aspectRatio: '3 / 1' }}>
-                  <img src={bannerImage} alt="배너 이미지" className="w-full h-full object-cover" />
+                  <Image src={bannerImage} alt="배너 이미지" fill sizes="(max-width: 700px) 100vw, 640px" className="w-full h-full object-cover" />
                   <button type="button" onClick={() => setBannerImage(null)}
                     className="absolute top-2 right-2 bg-black/60 text-white w-6 h-6 rounded-full text-xs flex items-center justify-center hover:bg-black/80">✕</button>
                 </div>
@@ -626,10 +631,10 @@ function OwnerEditModal({ business, isRealtor, onClose, onSave }: { business: an
               {portfolio.length > 0 && (
                 <div className="grid grid-cols-3 gap-2 mb-2">
                   {portfolio.map((item, i) => (
-                    <div key={i} className="relative border border-border rounded-lg overflow-hidden">
-                      <img src={item.url} alt="" className="w-full h-24 object-cover" />
+                    <div key={i} className="relative border border-border rounded-lg overflow-hidden h-24">
+                      <Image src={item.url} alt="" fill sizes="200px" className="w-full h-full object-cover" />
                       <button type="button" onClick={() => removePortfolioItem(i)}
-                        className="absolute top-1 right-1 bg-black/60 text-white w-5 h-5 rounded-full text-xs flex items-center justify-center hover:bg-black/80">✕</button>
+                        className="absolute top-1 right-1 bg-black/60 text-white w-5 h-5 rounded-full text-xs flex items-center justify-center hover:bg-black/80 z-10">✕</button>
                       <input
                         type="text"
                         value={item.caption}

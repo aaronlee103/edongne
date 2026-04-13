@@ -1,5 +1,6 @@
 'use client';
 
+import Image from 'next/image';
 import { useEffect, useState, useMemo } from 'react';
 import { createClient } from '@/lib/supabase-client';
 import { useRegion } from '@/context/RegionContext';
@@ -161,11 +162,13 @@ export default function RealtorsPage() {
               <Link href={`/business/${realtor.id}`} key={realtor.id}>
                 <div className="border rounded-xl overflow-hidden hover:shadow-lg transition cursor-pointer bg-white">
                   {realtor.hero_image && (
-                    <div className="w-full h-48 overflow-hidden">
-                      <img
+                    <div className="w-full h-48 overflow-hidden relative">
+                      <Image
                         src={realtor.hero_image}
                         alt={realtor.kor_name}
-                        className="w-full h-full object-cover"
+                        fill
+                        className="object-cover"
+                        sizes="(max-width: 768px) 100vw, 300px"
                       />
                     </div>
                   )}
