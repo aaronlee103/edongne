@@ -88,12 +88,18 @@ export async function middleware(request: NextRequest) {
 
     const { data: profile } = await supabase
       .from('users')
-      .select('role')
+      .select('role, region')
       .eq('id', user.id)
       .single()
 
     if (!profile || !['super', 'editor'].includes(profile.role)) {
       return NextResponse.redirect(new URL('/', request.url))
+    }
+
+    // 관리자 역할과 담당 지역을 헤더로 전달
+    response.headers.set('x-admin-role', profile.role)
+    if (profile.region) {
+      response.headers.set('x-admin-region', profile.region)
     }
   }
 

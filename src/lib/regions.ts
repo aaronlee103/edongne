@@ -19,7 +19,7 @@ export const REGIONS: Region[] = [
   { code: 'seattle', name_ko: '시애틀', name_en: 'Seattle', subtitle: '시애틀·워싱턴주 한인 커뮤니티', active: false },
   { code: 'chicago', name_ko: '시카고', name_en: 'Chicago', subtitle: '시카고·중서부 한인 커뮤니티', active: false },
   { code: 'sf', name_ko: '샌프란시스코', name_en: 'San Francisco', subtitle: 'SF·실리콘밸리 한인 커뮤니티', active: false },
-  { code: 'atlanta', name_ko: '애틀랜타', name_en: 'Atlanta', subtitle: '애틀랜타·조지아 한인 커뮤니티', active: false },
+  { code: 'atlanta', name_ko: '애틀랜타', name_en: 'Atlanta', subtitle: '애틀랜타·조지아 한인 커뮤니티', active: true },
   { code: 'philly', name_ko: '필라델피아', name_en: 'Philadelphia', subtitle: '필라델피아·펜실베이니아 한인 커뮤니티', active: false },
   { code: 'dallas', name_ko: '달라스', name_en: 'Dallas', subtitle: '달라스·텍사스 북부 한인 커뮤니티', active: false },
   { code: 'houston', name_ko: '휴스턴', name_en: 'Houston', subtitle: '휴스턴·텍사스 남부 한인 커뮤니티', active: false },

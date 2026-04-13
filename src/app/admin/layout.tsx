@@ -4,6 +4,8 @@ import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase-client'
+import { AdminRegionProvider, useAdminRegion } from '@/context/AdminRegionContext'
+import { REGIONS } from '@/lib/regions'
 
 const NAV = [
   { href: '/admin', label: '대시보드', icon: '📊' },
@@ -17,7 +19,6 @@ const NAV = [
 const ALLOWED_ROLES = ['super', 'editor']
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
-  const pathname = usePathname()
   const router = useRouter()
   const supabase = createClient()
   const [authorized, setAuthorized] = useState(false)
@@ -35,7 +36,6 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       return
     }
 
-    // users 테이블에서 역할 확인
     const { data: profile } = await supabase
       .from('users')
       .select('role')
@@ -43,7 +43,6 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       .single()
 
     if (!profile || !ALLOWED_ROLES.includes(profile.role)) {
-      // 권한 없음
       setLoading(false)
       setAuthorized(false)
       return
@@ -77,48 +76,95 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   }
 
   return (
-    <div className="min-h-[calc(100vh-56px)] flex">
-      <aside className="w-52 border-r border-border bg-bg-light shrink-0 hidden md:block">
-        <div className="p-4 border-b border-border">
-          <h2 className="font-bold text-sm">관리자</h2>
+    <AdminRegionProvider>
+      <AdminLayoutInner>{children}</AdminLayoutInner>
+    </AdminRegionProvider>
+  )
+}
+
+function AdminLayoutInner({ children }: { children: React.ReactNode }) {
+  const pathname = usePathname()
+  const { selectedRegion, setSelectedRegion, userRole, isRegionAllowed } = useAdminRegion()
+
+  const currentRegionName = REGIONS.find(r => r.code === selectedRegion)?.name_ko || selectedRegion
+
+  return (
+    <div className="min-h-[calc(100vh-56px)] flex flex-col">
+      {/* 지역 탭 바 */}
+      <div className="bg-white border-b border-border px-4 py-0 overflow-x-auto shrink-0">
+        <div className="flex items-center gap-1 min-w-max">
+          <span className="text-xs text-muted mr-2 shrink-0 py-2">지역:</span>
+          {REGIONS.map((region) => {
+            const allowed = isRegionAllowed(region.code)
+            const isSelected = selectedRegion === region.code
+            return (
+              <button
+                key={region.code}
+                onClick={() => allowed && setSelectedRegion(region.code)}
+                disabled={!allowed}
+                className={`px-3 py-2 text-xs whitespace-nowrap border-b-2 transition-colors ${
+                  isSelected
+                    ? 'border-black text-black font-bold'
+                    : allowed
+                      ? 'border-transparent text-secondary hover:text-black hover:border-gray-300'
+                      : 'border-transparent text-gray-300 cursor-not-allowed'
+                }`}
+                title={!allowed ? '접근 권한이 없습니다' : region.name_ko}
+              >
+                {region.name_ko}
+              </button>
+            )
+          })}
+          {userRole === 'super' && (
+            <span className="text-[10px] text-muted ml-2 py-2 shrink-0">👑 슈퍼관리자</span>
+          )}
         </div>
-        <nav className="p-2">
-          {NAV.map((item) => (
+      </div>
+
+      <div className="flex flex-1">
+        <aside className="w-52 border-r border-border bg-bg-light shrink-0 hidden md:block">
+          <div className="p-4 border-b border-border">
+            <h2 className="font-bold text-sm">관리자</h2>
+            <p className="text-xs text-muted mt-0.5">{currentRegionName}</p>
+          </div>
+          <nav className="p-2">
+            {NAV.map((item) => (
+              <Link
+                key={item.href}
+                href={item.href}
+                className={`flex items-center gap-2 px-3 py-2 text-sm rounded-lg mb-0.5 transition-colors ${
+                  pathname === item.href
+                    ? 'bg-black text-white'
+                    : 'text-secondary hover:bg-gray-100'
+                }`}
+              >
+                <span>{item.icon}</span>
+                {item.label}
+              </Link>
+            ))}
+          </nav>
+          <div className="p-4 mt-auto border-t border-border">
+            <Link href="/" className="text-xs text-muted hover:text-primary">← 사이트로 돌아가기</Link>
+          </div>
+        </aside>
+
+        <div className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-border z-50 flex">
+          {NAV.slice(0, 5).map((item) => (
             <Link
               key={item.href}
               href={item.href}
-              className={`flex items-center gap-2 px-3 py-2 text-sm rounded-lg mb-0.5 transition-colors ${
-                pathname === item.href
-                  ? 'bg-black text-white'
-                  : 'text-secondary hover:bg-gray-100'
+              className={`flex-1 py-2 text-center text-xs ${
+                pathname === item.href ? 'text-primary font-medium' : 'text-muted'
               }`}
             >
-              <span>{item.icon}</span>
+              <span className="block text-lg">{item.icon}</span>
               {item.label}
             </Link>
           ))}
-        </nav>
-        <div className="p-4 mt-auto border-t border-border">
-          <Link href="/" className="text-xs text-muted hover:text-primary">← 사이트로 돌아가기</Link>
         </div>
-      </aside>
 
-      <div className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-border z-50 flex">
-        {NAV.slice(0, 5).map((item) => (
-          <Link
-            key={item.href}
-            href={item.href}
-            className={`flex-1 py-2 text-center text-xs ${
-              pathname === item.href ? 'text-primary font-medium' : 'text-muted'
-            }`}
-          >
-            <span className="block text-lg">{item.icon}</span>
-            {item.label}
-          </Link>
-        ))}
+        <main className="flex-1 p-6 pb-20 md:pb-6 overflow-auto">{children}</main>
       </div>
-
-      <main className="flex-1 p-6 pb-20 md:pb-6 overflow-auto">{children}</main>
     </div>
   )
 }
