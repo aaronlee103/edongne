@@ -3,8 +3,15 @@
 import { useState, useEffect, useRef } from 'react'
 import { createClient } from '@/lib/supabase-client'
 import { uploadImage } from '@/lib/upload'
+import { useAdminRegion } from '@/context/AdminRegionContext'
 
 const TYPES: Record<string, string> = { realtor: '부동산', builder: '건축', lawyer: '변호사', mortgage: '융자', mover: '이사' }
+
+/** 관리자 선택 지역 코드 → businesses 테이블 region 코드 매핑 */
+function getBusinessRegionCodes(adminRegion: string): string[] {
+  if (adminRegion === 'ny') return ['NY', 'NJ']
+  return [adminRegion.toUpperCase()]
+}
 const PLAN_OPTIONS = ['basic', 'pro', 'premium']
 const STATUS_OPTIONS = ['active', 'pending', 'suspended']
 
@@ -155,6 +162,7 @@ function UserSearch({ supabase, currentUserId, onSelect, onClear }: {
 // ─── 메인 페이지 ───
 export default function AdminBusinessesPage() {
   const supabase = createClient()
+  const { selectedRegion } = useAdminRegion()
   const [businesses, setBusinesses] = useState<any[]>([])
   const [usersMap, setUsersMap] = useState<Record<string, any>>({})
   const [loading, setLoading] = useState(true)
@@ -162,11 +170,12 @@ export default function AdminBusinessesPage() {
   const [showAdd, setShowAdd] = useState(false)
   const [editId, setEditId] = useState<string | null>(null)
 
-  useEffect(() => { fetchBusinesses() }, [filter])
+  useEffect(() => { fetchBusinesses() }, [filter, selectedRegion])
 
   async function fetchBusinesses() {
     setLoading(true)
-    let query = supabase.from('businesses').select('*').order('created_at', { ascending: false }).limit(200)
+    const regionCodes = getBusinessRegionCodes(selectedRegion)
+    let query = supabase.from('businesses').select('*').in('region', regionCodes).order('created_at', { ascending: false }).limit(200)
     if (filter !== 'all') query = query.eq('type', filter)
     const { data } = await query
     if (data) {
@@ -214,7 +223,7 @@ export default function AdminBusinessesPage() {
         </div>
       </div>
 
-      {showAdd && <AddBusinessForm supabase={supabase} onAdd={() => { fetchBusinesses(); setShowAdd(false) }} />}
+      {showAdd && <AddBusinessForm supabase={supabase} defaultRegion={getBusinessRegionCodes(selectedRegion)[0]} onAdd={() => { fetchBusinesses(); setShowAdd(false) }} />}
 
       <div className="flex gap-2 mb-4">
         {[['all', '전체'], ['realtor', '부동산'], ['builder', '건축'], ['lawyer', '변호사'], ['mortgage', '융자'], ['mover', '이사']].map(([k, l]) => (
@@ -500,6 +509,12 @@ function EditBusinessModal({ supabase, business, onClose, onSave }: { supabase: 
               <label className="block text-xs font-medium text-muted mb-1">주</label>
               <select value={form.region} onChange={e => update('region', e.target.value)} className="w-full border border-border rounded-lg px-3 py-2 text-sm">
                 <option value="NY">NY</option><option value="NJ">NJ</option>
+                <option value="LA">LA</option><option value="DC">DC</option>
+                <option value="SEATTLE">Seattle</option><option value="CHICAGO">Chicago</option>
+                <option value="SF">SF</option><option value="ATLANTA">Atlanta</option>
+                <option value="PHILLY">Philly</option><option value="DALLAS">Dallas</option>
+                <option value="HOUSTON">Houston</option><option value="HAWAII">Hawaii</option>
+                <option value="BOSTON">Boston</option>
               </select>
             </div>
             <div>
@@ -569,9 +584,9 @@ function EditBusinessModal({ supabase, business, onClose, onSave }: { supabase: 
 }
 
 // ─── 업체 추가 폼 ───
-function AddBusinessForm({ supabase, onAdd }: { supabase: any; onAdd: () => void }) {
+function AddBusinessForm({ supabase, defaultRegion, onAdd }: { supabase: any; defaultRegion: string; onAdd: () => void }) {
   const [form, setForm] = useState({
-    type: 'realtor', kor_name: '', eng_name: '', phone1: '', region: 'NY', area: '', specialty: '', plan: 'basic'
+    type: 'realtor', kor_name: '', eng_name: '', phone1: '', region: defaultRegion, area: '', specialty: '', plan: 'basic'
   })
   const [ownerId, setOwnerId] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
@@ -615,6 +630,12 @@ function AddBusinessForm({ supabase, onAdd }: { supabase: any; onAdd: () => void
         <input value={form.phone1} onChange={e => update('phone1', e.target.value)} placeholder="전화번호" className="border border-border rounded px-2 py-1.5" />
         <select value={form.region} onChange={e => update('region', e.target.value)} className="border border-border rounded px-2 py-1.5">
           <option value="NY">NY</option><option value="NJ">NJ</option>
+          <option value="LA">LA</option><option value="DC">DC</option>
+          <option value="SEATTLE">Seattle</option><option value="CHICAGO">Chicago</option>
+          <option value="SF">SF</option><option value="ATLANTA">Atlanta</option>
+          <option value="PHILLY">Philly</option><option value="DALLAS">Dallas</option>
+          <option value="HOUSTON">Houston</option><option value="HAWAII">Hawaii</option>
+          <option value="BOSTON">Boston</option>
         </select>
         <input value={form.area} onChange={e => update('area', e.target.value)} placeholder="지역 (퀸즈, 포트리...)" className="border border-border rounded px-2 py-1.5" />
         <input value={form.specialty} onChange={e => update('specialty', e.target.value)} placeholder="전문분야" className="border border-border rounded px-2 py-1.5" />
