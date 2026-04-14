@@ -59,9 +59,8 @@ export function RegionProvider({ children, initialRegion }: { children: ReactNod
     // a stale cookie or cached SSR prop says.
     const subRegion = getSubdomainRegionFromHostname()
     if (subRegion) {
-      if (subRegion !== regionCode) {
-        setRegionCodeState(subRegion)
-      }
+      // functional setState avoids closing over `regionCode` (keeps deps clean)
+      setRegionCodeState(prev => (prev === subRegion ? prev : subRegion))
       // Make sure the cookie matches the current subdomain so a later visit
       // to the apex/www correctly remembers this preference.
       writeRegionCookie(subRegion)
@@ -80,8 +79,7 @@ export function RegionProvider({ children, initialRegion }: { children: ReactNod
         }
       }
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
+  }, [initialRegion])
 
   const setRegionCode = (code: string) => {
     setRegionCodeState(code)
