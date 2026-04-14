@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { REGIONS, DEFAULT_REGION, REGION_COOKIE, getRegion } from '@/lib/regions'
+import { REGIONS, DEFAULT_REGION, REGION_COOKIE, getRegion, isRegionActive } from '@/lib/regions'
 
 const DISMISS_KEY = 'edongne_geo_prompt_dismissed'
 
@@ -29,6 +29,9 @@ export default function GeoRegionPrompt({ currentRegion, geoRegion, regionSource
     if (regionSource === 'subdomain') return
     // Already on the geo region — nothing to ask
     if (currentRegion === geoRegion) return
+    // Don't offer to switch to a region that isn't publicly launched yet —
+    // middleware would immediately redirect the visitor back to www.
+    if (!isRegionActive(geoRegion)) return
     // Permanently dismissed
     try {
       if (localStorage.getItem(DISMISS_KEY) === '1') return

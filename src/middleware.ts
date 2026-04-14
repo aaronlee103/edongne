@@ -5,6 +5,11 @@ const REGION_COOKIE = 'edongne_region'
 const DEFAULT_REGION = 'ny'
 const VALID_REGIONS = ['ny', 'la', 'dc', 'seattle', 'chicago', 'sf', 'atlanta', 'philly', 'dallas', 'houston', 'hawaii', 'boston']
 
+// Regions that are publicly accessible. Subdomains for regions NOT in this
+// list are admin-only — non-admin visitors get redirected to www.
+// Keep this in sync with `active: true` entries in src/lib/regions.ts.
+const PUBLIC_REGIONS = new Set(['ny'])
+
 // Vercel IP city -> region mapping
 const CITY_MAP: Record<string, string> = {
   'new york': 'ny', 'brooklyn': 'ny', 'queens': 'ny', 'bronx': 'ny', 'manhattan': 'ny',
@@ -116,6 +121,30 @@ export async function middleware(request: NextRequest) {
   )
 
   const { data: { user } } = await supabase.auth.getUser()
+
+  // ---- Gate inactive region subdomains (admin-only) ----
+  // If the visitor landed on e.g. la.edongne.com and LA isn't public yet,
+  // only super/editor admins may pass through; everyone else bounces to www.
+  // We only look up the profile when we actually need to — i.e. when the
+  // region was resolved from the subdomain AND it's a non-public region.
+  if (source === 'subdomain' && isEdongne && !PUBLIC_REGIONS.has(region)) {
+    let isAdmin = false
+    if (user) {
+      const { data: profile } = await supabase
+        .from('users')
+        .select('role')
+        .eq('id', user.id)
+        .single()
+      isAdmin = !!profile && ['super', 'editor'].includes(profile.role)
+    }
+    if (!isAdmin) {
+      const redirectUrl = new URL(request.url)
+      redirectUrl.hostname = 'www.edongne.com'
+      redirectUrl.protocol = 'https:'
+      redirectUrl.port = ''
+      return NextResponse.redirect(redirectUrl)
+    }
+  }
 
   // ---- Always sync region cookie to detected region (subdomain wins) ----
   // Only set the cookie when the source is authoritative (subdomain) OR
