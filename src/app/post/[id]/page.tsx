@@ -85,6 +85,12 @@ export default async function PostPage({ params }: { params: { id: string } }) {
     .single()
 
   // JSON-LD 구조화 데이터 (구글 뉴스/리치 결과)
+  // 이미지 우선순위: 썸네일 > 본문 첫 이미지 > 사이트 기본 아이콘 (폴백)
+  const articleImage =
+    post?.thumbnail ||
+    (post?.content ? extractFirstImage(post.content) : null) ||
+    `${SITE_URL}/apple-touch-icon.png`
+
   const jsonLd = post ? {
     '@context': 'https://schema.org',
     '@type': post.type === 'magazine' ? 'NewsArticle' : 'Article',
@@ -100,23 +106,22 @@ export default async function PostPage({ params }: { params: { id: string } }) {
       '@type': 'Organization',
       name: '이동네',
       url: SITE_URL,
+      logo: {
+        '@type': 'ImageObject',
+        url: `${SITE_URL}/apple-touch-icon.png`,
+        width: 180,
+        height: 180,
+      },
     },
     mainEntityOfPage: {
       '@type': 'WebPage',
       '@id': `${SITE_URL}/post/${params.id}`,
     },
-    ...(post.thumbnail && {
-      image: {
-        '@type': 'ImageObject',
-        url: post.thumbnail,
-      },
-    }),
-    ...(!post.thumbnail && post.content && extractFirstImage(post.content) && {
-      image: {
-        '@type': 'ImageObject',
-        url: extractFirstImage(post.content),
-      },
-    }),
+    image: {
+      '@type': 'ImageObject',
+      url: articleImage,
+    },
+    articleSection: CATEGORY_LABELS[post.category] || post.category,
     inLanguage: 'ko',
     isAccessibleForFree: true,
   } : null
