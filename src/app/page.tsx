@@ -262,6 +262,32 @@ function HomeContent() {
                     </Link>
                   ))}
 
+                  {/* 좌우 화살표 */}
+                  {editorPicks.length > 1 && (
+                    <>
+                      <button
+                        onClick={(e) => {
+                          e.preventDefault()
+                          setCurrentSlide(prev => (prev - 1 + editorPicks.length) % editorPicks.length)
+                          setIsPaused(true)
+                        }}
+                        className="absolute left-3 top-1/2 -translate-y-1/2 z-20 w-10 h-10 flex items-center justify-center rounded-full bg-black/40 text-white hover:bg-black/60 transition-colors"
+                      >
+                        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="10,2 4,8 10,14" /></svg>
+                      </button>
+                      <button
+                        onClick={(e) => {
+                          e.preventDefault()
+                          setCurrentSlide(prev => (prev + 1) % editorPicks.length)
+                          setIsPaused(true)
+                        }}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 z-20 w-10 h-10 flex items-center justify-center rounded-full bg-black/40 text-white hover:bg-black/60 transition-colors"
+                      >
+                        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="6,2 12,8 6,14" /></svg>
+                      </button>
+                    </>
+                  )}
+
                   {/* 컨트롤: 일시정지/재생 + 슬라이드 번호 */}
                   {editorPicks.length > 1 && (
                     <div className="absolute bottom-4 right-4 z-20 flex items-center gap-0 bg-black/60 rounded-full overflow-hidden">
