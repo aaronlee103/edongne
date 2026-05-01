@@ -33,3 +33,18 @@ next-env.d.ts
 # one-off scripts (contain secrets)
 generate-articles.*
 fix-duplicates.*
+update-articles.*
+update-v3.*
+check-articles.*
+query_articles.*
+analyze_articles.*
+shuffle-dates.*
+remaining-templates*
+_*_templates*
+ANALYSIS_SUMMARY.txt
+README_ANALYSIS.txt
+
+# python cache
+__pycache__/
+*.pyc
+*.pyo
