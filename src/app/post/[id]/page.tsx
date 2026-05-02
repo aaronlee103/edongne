@@ -126,12 +126,28 @@ export default async function PostPage({ params }: { params: { id: string } }) {
     isAccessibleForFree: true,
   } : null
 
+  const breadcrumbJsonLd = post ? {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+      { '@type': 'ListItem', position: 1, name: '홈', item: SITE_URL },
+      { '@type': 'ListItem', position: 2, name: post.type === 'magazine' ? '매거진' : '커뮤니티', item: `${SITE_URL}${post.type === 'magazine' ? '/' : '/board'}` },
+      { '@type': 'ListItem', position: 3, name: post.title },
+    ],
+  } : null
+
   return (
     <>
       {jsonLd && (
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+        />
+      )}
+      {breadcrumbJsonLd && (
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }}
         />
       )}
       <PostContent />

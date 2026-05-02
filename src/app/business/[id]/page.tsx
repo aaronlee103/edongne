@@ -133,12 +133,38 @@ export default async function BusinessPage({ params }: { params: { id: string } 
     },
   } : null
 
+  const TYPE_BACK_LABEL: Record<string, { href: string; name: string }> = {
+    realtor: { href: '/realtors', name: '부동산 에이전트' },
+    builder: { href: '/builders', name: '건축/인테리어' },
+    lawyer: { href: '/lawyers', name: '변호사' },
+    mortgage: { href: '/mortgage', name: '융자/모기지' },
+    mover: { href: '/movers', name: '이사' },
+  }
+
+  const categoryInfo = biz ? TYPE_BACK_LABEL[biz.type] || { href: '/realtors', name: '업체' } : null
+
+  const breadcrumbJsonLd = biz ? {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+      { '@type': 'ListItem', position: 1, name: '홈', item: SITE_URL },
+      { '@type': 'ListItem', position: 2, name: categoryInfo!.name, item: `${SITE_URL}${categoryInfo!.href}` },
+      { '@type': 'ListItem', position: 3, name: biz.kor_name },
+    ],
+  } : null
+
   return (
     <>
       {jsonLd && (
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+        />
+      )}
+      {breadcrumbJsonLd && (
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }}
         />
       )}
       <BusinessDetailClient params={params} />

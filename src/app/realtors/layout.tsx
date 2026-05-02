@@ -1,4 +1,7 @@
 import { Metadata } from 'next'
+import { createServerSupabase } from '@/lib/supabase-server'
+
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://www.edongne.com'
 
 export const metadata: Metadata = {
   title: '부동산 에이전트 찾기',
@@ -11,6 +14,42 @@ export const metadata: Metadata = {
   },
 }
 
-export default function RealtorsLayout({ children }: { children: React.ReactNode }) {
-  return children
+export default async function RealtorsLayout({ children }: { children: React.ReactNode }) {
+  const supabase = createServerSupabase()
+  const { data: businesses } = await supabase
+    .from('businesses')
+    .select('id, kor_name, specialty, region, area')
+    .eq('type', 'realtor')
+    .or('status.is.null,status.eq.active')
+    .order('sort_priority', { ascending: false })
+    .limit(30)
+
+  const itemListJsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'ItemList',
+    name: '부동산 에이전트',
+    itemListElement: (businesses || []).map((biz, i) => ({
+      '@type': 'ListItem',
+      position: i + 1,
+      url: `${SITE_URL}/business/${biz.id}`,
+      name: biz.kor_name,
+    })),
+  }
+
+  const breadcrumbJsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+      { '@type': 'ListItem', position: 1, name: '홈', item: SITE_URL },
+      { '@type': 'ListItem', position: 2, name: '부동산 에이전트' },
+    ],
+  }
+
+  return (
+    <>
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(itemListJsonLd) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }} />
+      {children}
+    </>
+  )
 }

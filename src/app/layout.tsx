@@ -118,9 +118,49 @@ export default async function RootLayout({
   // Only show the prompt on the apex/www domain — not on dedicated subdomains.
   const isApex = host === 'edongne.com' || host === 'www.edongne.com' || host.startsWith('localhost')
 
+  // Organization + WebSite JSON-LD (홈페이지 전체)
+  const organizationJsonLd = {
+    '@context': 'https://schema.org',
+    '@graph': [
+      {
+        '@type': 'Organization',
+        '@id': `${SITE_URL}/#organization`,
+        name: '이동네',
+        url: SITE_URL,
+        logo: {
+          '@type': 'ImageObject',
+          url: `${SITE_URL}/apple-touch-icon.png`,
+          width: 180,
+          height: 180,
+        },
+        sameAs: [
+          'https://www.facebook.com/edongne',
+          'https://www.instagram.com/edongne',
+        ],
+      },
+      {
+        '@type': 'WebSite',
+        '@id': `${SITE_URL}/#website`,
+        url: SITE_URL,
+        name: '이동네',
+        publisher: { '@id': `${SITE_URL}/#organization` },
+        inLanguage: 'ko',
+        potentialAction: {
+          '@type': 'SearchAction',
+          target: `${SITE_URL}/?search={search_term_string}`,
+          'query-input': 'required name=search_term_string',
+        },
+      },
+    ],
+  }
+
   return (
     <html lang="ko">
       <head>
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationJsonLd) }}
+        />
         <link
           rel="preload"
           href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/woff2/PretendardVariable.woff2"
