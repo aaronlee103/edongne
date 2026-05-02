@@ -92,13 +92,14 @@ function HomeContent() {
   }, [searchParams])
 
   useEffect(() => {
-    Promise.all([fetchEditorPicks(), fetchAllPosts(), fetchPopularPosts(), fetchWeeklyPopular(), fetchBusinessCounts()])
+    Promise.all([fetchEditorPicks(), fetchPopularPosts(), fetchWeeklyPopular(), fetchBusinessCounts()])
   }, [regionCode])
 
+  // regionCode 변경 시에도 fetchAllPosts가 올바른 카테고리로 실행되도록 통합
   useEffect(() => {
     fetchAllPosts()
     setCurrentPage(1)
-  }, [issueCategory, searchTerm, refreshKey])
+  }, [issueCategory, searchTerm, refreshKey, regionCode])
 
   async function fetchEditorPicks() {
     const { data } = await supabase
