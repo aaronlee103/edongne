@@ -145,8 +145,9 @@ export default function Header() {
           </nav>
 
           <div className="flex items-center gap-3">
+            {/* 데스크톱: 로그인 상태 버튼들 */}
             {user ? (
-              <div className="flex items-center gap-2">
+              <div className="hidden md:flex items-center gap-2">
                 <Link
                   href="/write"
                   className="text-sm bg-black text-white px-4 py-1.5 rounded-full hover:bg-gray-800 transition-colors"
@@ -177,6 +178,7 @@ export default function Header() {
               </Link>
             )}
 
+            {/* 모바일: 햄버거 메뉴 (로그인 시에도 표시) */}
             <button
               className="md:hidden p-2"
               onClick={() => setMobileOpen(!mobileOpen)}
@@ -195,6 +197,34 @@ export default function Header() {
 
         {mobileOpen && (
           <nav className="md:hidden border-t border-border py-3 space-y-1">
+            {user && (
+              <>
+                <Link
+                  href="/write"
+                  className="block px-2 py-2 text-sm font-medium text-primary hover:bg-gray-50 rounded"
+                  onClick={() => setMobileOpen(false)}
+                >
+                  글쓰기
+                </Link>
+                <Link
+                  href="/mypage"
+                  className="block px-2 py-2 text-sm text-secondary hover:text-primary hover:bg-gray-50 rounded"
+                  onClick={() => setMobileOpen(false)}
+                >
+                  마이페이지
+                </Link>
+                {(role === 'super' || role === 'editor') && (
+                  <Link
+                    href="/admin"
+                    className="block px-2 py-2 text-sm text-secondary hover:text-primary hover:bg-gray-50 rounded"
+                    onClick={() => setMobileOpen(false)}
+                  >
+                    관리
+                  </Link>
+                )}
+                <div className="border-b border-border my-1" />
+              </>
+            )}
             {NAV_ITEMS.map((item) => (
               <Link
                 key={item.href}
@@ -205,6 +235,17 @@ export default function Header() {
                 {item.label}
               </Link>
             ))}
+            {user && (
+              <>
+                <div className="border-b border-border my-1" />
+                <button
+                  onClick={() => { handleLogout(); setMobileOpen(false) }}
+                  className="block w-full text-left px-2 py-2 text-sm text-muted hover:text-primary hover:bg-gray-50 rounded"
+                >
+                  로그아웃
+                </button>
+              </>
+            )}
           </nav>
         )}
       </div>
