@@ -279,26 +279,6 @@ function HomeContent() {
       {!searchTerm && (
         <section className="border-b border-border">
           <div className="max-w-6xl mx-auto px-4">
-            {/* 카테고리 탭 */}
-            <nav className="flex gap-0.5 overflow-x-auto border-b border-border" style={{ scrollbarWidth: 'none' }}>
-              {ISSUE_CATEGORIES.map(cat => (
-                <button
-                  key={cat.key}
-                  onClick={() => handleCategoryChange(cat.key)}
-                  className={`px-4 py-3 text-sm whitespace-nowrap transition-colors relative ${
-                    issueCategory === cat.key
-                      ? 'font-bold text-black'
-                      : 'text-gray-500 hover:text-black'
-                  }`}
-                >
-                  {cat.label}
-                  {issueCategory === cat.key && (
-                    <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-black" />
-                  )}
-                </button>
-              ))}
-            </nav>
-
             {/* ===== 메인 뷰: 슬라이더 + 그리드 (전체/에디터 픽) ===== */}
             {isMainView && (
               <div className="grid md:grid-cols-3 gap-6 py-6">
