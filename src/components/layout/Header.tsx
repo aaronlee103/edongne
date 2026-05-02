@@ -215,9 +215,15 @@ export default function Header() {
           <div className="flex items-center gap-1 py-2">
             <div className="flex items-center gap-1 overflow-x-auto flex-1">
               {ISSUE_CATEGORIES.map((cat) => (
-                <Link
+                <button
                   key={cat.key}
-                  href={cat.key === 'all' ? '/' : `/?category=${cat.key}`}
+                  onClick={() => {
+                    const base = cat.key === 'all' ? '/' : `/?category=${cat.key}`
+                    // 같은 카테고리 재클릭 시에도 searchParams가 변하도록 타임스탬프 추가
+                    const separator = base.includes('?') ? '&' : '?'
+                    router.push(`${base}${separator}_t=${Date.now()}`)
+                    window.scrollTo(0, 0)
+                  }}
                   className={`px-3 py-2 text-sm whitespace-nowrap rounded-full transition-colors ${
                     (pathname === '/' && currentCategory === cat.key) || (pathname === '/' && cat.key === 'all' && !searchParams.get('category'))
                       ? 'bg-black text-white font-medium'
@@ -225,7 +231,7 @@ export default function Header() {
                   }`}
                 >
                   {cat.label}
-                </Link>
+                </button>
               ))}
             </div>
 

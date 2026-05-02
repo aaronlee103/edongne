@@ -76,6 +76,9 @@ function HomeContent() {
     if (cat && ISSUE_CATEGORIES.some(c => c.key === cat)) {
       setIssueCategory(cat)
       setSearchTerm('')
+      // 같은 카테고리 재클릭 시에도 데이터 새로고침
+      fetchAllPosts()
+      setCurrentPage(1)
     }
     if (search) {
       setSearchTerm(search)
