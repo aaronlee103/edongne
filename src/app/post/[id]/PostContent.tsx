@@ -246,13 +246,32 @@ export default function PostContent() {
                   </div>
                 )}
 
-                {/* 좋아요 버튼 */}
-            <div className="flex items-center gap-4 mt-6 pt-6 border-t border-border">
+                {/* 좋아요 + 공유 버튼 */}
+            <div className="flex items-center justify-between mt-6 pt-6 border-t border-border">
               <button onClick={handleLike} disabled={likeLoading}
                 className={`flex items-center gap-2 px-4 py-2 rounded-full border transition-colors ${liked ? 'bg-red-50 border-red-200 text-red-500' : 'border-border text-muted hover:bg-gray-50'}`}>
                 <span className="text-lg">{liked ? '❤️' : '🤍'}</span>
                 <span className="text-sm font-medium">좋아요 {likeCount > 0 ? likeCount : ''}</span>
               </button>
+              <div className="flex items-center gap-1">
+                <span className="text-xs text-muted mr-1">공유</span>
+                <button onClick={() => { const url = `https://edongne.com/post/${postId}`; window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}`, '_blank', 'width=600,height=400') }}
+                  className="w-9 h-9 flex items-center justify-center rounded-full border border-border hover:bg-gray-50 transition-colors" title="Facebook">
+                  <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>
+                </button>
+                <button onClick={() => { const url = `https://edongne.com/post/${postId}`; window.open(`https://twitter.com/intent/tweet?url=${encodeURIComponent(url)}&text=${encodeURIComponent(post.title)}`, '_blank', 'width=600,height=400') }}
+                  className="w-9 h-9 flex items-center justify-center rounded-full border border-border hover:bg-gray-50 transition-colors" title="X">
+                  <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
+                </button>
+                <button onClick={() => { const url = `https://edongne.com/post/${postId}`; window.open(`https://threads.net/intent/post?text=${encodeURIComponent(post.title + ' ' + url)}`, '_blank', 'width=600,height=400') }}
+                  className="w-9 h-9 flex items-center justify-center rounded-full border border-border hover:bg-gray-50 transition-colors" title="Threads">
+                  <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M12.186 24h-.007c-3.581-.024-6.334-1.205-8.184-3.509C2.35 18.44 1.5 15.586 1.472 12.01v-.017c.03-3.579.879-6.43 2.525-8.482C5.845 1.205 8.6.024 12.18 0h.014c2.746.02 5.043.725 6.826 2.098 1.677 1.29 2.858 3.13 3.509 5.467l-2.04.569c-1.104-3.96-3.898-5.984-8.304-6.015-2.91.022-5.11.936-6.54 2.717C4.307 6.504 3.616 8.914 3.59 12c.025 3.083.717 5.496 2.057 7.164 1.43 1.783 3.631 2.698 6.54 2.717 2.623-.02 4.358-.631 5.8-2.045 1.647-1.613 1.618-3.593 1.09-4.798-.31-.71-.873-1.3-1.634-1.75-.192 1.352-.622 2.446-1.284 3.272-.886 1.102-2.14 1.704-3.73 1.79-1.202.065-2.361-.218-3.259-.801-1.063-.689-1.685-1.74-1.752-2.96-.065-1.187.408-2.264 1.33-3.03.858-.712 2.042-1.122 3.425-1.19.964-.047 1.86.033 2.688.233-.084-.542-.237-1.006-.464-1.375-.353-.573-.947-.915-1.766-.972-1.078.018-2.03.332-2.842.968L9.17 7.453c1.047-.819 2.386-1.272 3.88-1.272h.087c1.34.062 2.388.598 3.108 1.588.476.655.789 1.484.934 2.467.77.2 1.468.49 2.087.876 1.14.709 1.98 1.664 2.476 2.856.728 1.747.776 4.516-1.37 6.616-1.832 1.793-4.072 2.55-7.256 2.571zm-1.248-7.498c-.052.293.003.556.164.768.222.293.621.469 1.13.499 1.036-.056 1.757-.444 2.31-1.132.402-.502.696-1.145.882-1.926-.591-.147-1.228-.225-1.904-.194-.942.046-1.694.285-2.18.693-.366.307-.427.6-.402.292z"/></svg>
+                </button>
+                <button onClick={() => { const url = `https://edongne.com/post/${postId}`; navigator.clipboard.writeText(url).then(() => alert('링크가 복사되었습니다!')) }}
+                  className="w-9 h-9 flex items-center justify-center rounded-full border border-border hover:bg-gray-50 transition-colors" title="링크 복사">
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"/></svg>
+                </button>
+              </div>
             </div>
           </article>
 
