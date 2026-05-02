@@ -50,6 +50,7 @@ function HomeContent() {
   const [currentSlide, setCurrentSlide] = useState(0)
   const [isPaused, setIsPaused] = useState(false)
   const slideInterval = useRef<NodeJS.Timeout | null>(null)
+  const [refreshKey, setRefreshKey] = useState(0)
 
   // 메인 페이지인지 서브 카테고리인지 판별
   const isMainView = issueCategory === 'all'
@@ -76,9 +77,9 @@ function HomeContent() {
     if (cat && ISSUE_CATEGORIES.some(c => c.key === cat)) {
       setIssueCategory(cat)
       setSearchTerm('')
-      // 같은 카테고리 재클릭 시에도 데이터 새로고침
-      fetchAllPosts()
       setCurrentPage(1)
+      // 같은 카테고리 재클릭 시에도 refreshKey 변경으로 데이터 새로고침 트리거
+      setRefreshKey(prev => prev + 1)
     }
     if (search) {
       setSearchTerm(search)
@@ -97,7 +98,7 @@ function HomeContent() {
   useEffect(() => {
     fetchAllPosts()
     setCurrentPage(1)
-  }, [issueCategory, searchTerm])
+  }, [issueCategory, searchTerm, refreshKey])
 
   async function fetchEditorPicks() {
     const { data } = await supabase
