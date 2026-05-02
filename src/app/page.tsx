@@ -85,16 +85,13 @@ function HomeContent() {
   }, [searchParams])
 
   useEffect(() => {
-    fetchEditorPicks()
-    fetchPopularPosts()
-    fetchWeeklyPopular()
-    fetchBusinessCounts()
+    Promise.all([fetchEditorPicks(), fetchAllPosts(), fetchPopularPosts(), fetchWeeklyPopular(), fetchBusinessCounts()])
   }, [regionCode])
 
   useEffect(() => {
     fetchAllPosts()
     setCurrentPage(1)
-  }, [issueCategory, searchTerm, regionCode])
+  }, [issueCategory, searchTerm])
 
   async function fetchEditorPicks() {
     const { data } = await supabase
@@ -167,11 +164,11 @@ function HomeContent() {
   async function fetchBusinessCounts() {
     const types = ['realtor', 'builder', 'lawyer', 'mortgage', 'mover'] as const
     const codes = getBusinessRegionCodes(regionCode)
+    const results = await Promise.all(
+      types.map(t => supabase.from('businesses').select('id', { count: 'exact', head: true }).eq('type', t).in('region', codes))
+    )
     const counts: any = {}
-    for (const t of types) {
-      const { count } = await supabase.from('businesses').select('id', { count: 'exact', head: true }).eq('type', t).in('region', codes)
-      counts[t] = count || 0
-    }
+    types.forEach((t, i) => { counts[t] = results[i].count || 0 })
     setBusinessCounts(counts)
   }
 
