@@ -412,24 +412,22 @@ function HomeContent() {
                 ))}
               </div>
 
-              {/* 배너 광고: Sculpture Book Inc. */}
+              {/* 배너 광고 모집 */}
               <Link
-                href="/business/0d1ad303-7d15-42fc-b6df-f745079497d2"
-                className="block mt-6 rounded-lg overflow-hidden hover:opacity-95 transition-opacity"
-                style={{ backgroundColor: '#8A7D6B' }}
+                href="/contact"
+                className="block mt-6 rounded-lg overflow-hidden hover:opacity-95 transition-opacity border border-dashed border-gray-300 bg-gray-50"
               >
-                <div className="px-5 py-6">
-                  <p className="text-xs tracking-widest mb-3" style={{ color: '#D4CFC7' }}>
-                    SCULPTURE BOOK INC.
+                <div className="px-5 py-6 text-center">
+                  <p className="text-xs tracking-widest mb-2 text-gray-400 uppercase">Advertisement</p>
+                  <p className="text-lg font-medium text-gray-600 leading-snug">
+                    이 자리에 광고를 게재해보세요
                   </p>
-                  <p className="text-xl font-serif leading-snug" style={{ color: '#EDE8E0' }}>
-                    A Premier Custom<br />
-                    Metal Fabrication<br />
-                    Studio in Brooklyn, NYC
+                  <p className="text-sm text-gray-400 mt-2">
+                    뉴욕·뉴저지 지역 비즈니스를 홍보하세요
                   </p>
-                  <p className="text-xs mt-3" style={{ color: '#B8B0A4' }}>
-                    핸디맨 · 인테리어 · 메탈 제작
-                  </p>
+                  <span className="inline-block mt-3 text-xs font-medium text-white bg-black px-4 py-1.5 rounded-full">
+                    광고 문의하기
+                  </span>
                 </div>
               </Link>
             </div>
