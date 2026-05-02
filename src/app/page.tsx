@@ -52,7 +52,7 @@ function HomeContent() {
   const slideInterval = useRef<NodeJS.Timeout | null>(null)
 
   // 메인 페이지인지 서브 카테고리인지 판별
-  const isMainView = issueCategory === 'all' || issueCategory === 'editor'
+  const isMainView = issueCategory === 'all'
 
   // 에디터 픽 자동 슬라이드
   const startSlideTimer = useCallback(() => {
