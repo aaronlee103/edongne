@@ -218,20 +218,60 @@ function HomeContent() {
 
   return (
     <div>
-      {/* ======= 검색 결과 헤더 ======= */}
-      {searchTerm && (
-        <div className="max-w-6xl mx-auto px-4 py-4 border-b border-border">
-          <div className="flex items-center justify-between">
-            <p className="text-sm text-secondary">
-              <span className="font-medium text-primary">"{searchTerm}"</span> 검색 결과 ({allPosts.length}건)
-            </p>
-            <Link href="/" className="text-xs text-muted hover:text-primary">검색 초기화 ✕</Link>
-          </div>
-        </div>
-      )}
+      {/* ======= 검색 결과 (NYT 스타일 리스트) ======= */}
+      {searchTerm ? (
+        <section className="border-b border-border">
+          <div className="max-w-3xl mx-auto px-4 py-8">
+            {/* 검색어 헤더 */}
+            <div className="mb-6">
+              <h1 className="text-3xl font-bold mb-2">{searchTerm}</h1>
+              <div className="flex items-center justify-between">
+                <p className="text-sm text-muted">{allPosts.length}건의 검색 결과</p>
+                <Link href="/" className="text-sm text-muted hover:text-primary">검색 초기화 ✕</Link>
+              </div>
+            </div>
 
-      {/* ======= 이동네이슈 매거진 영역 ======= */}
-      <section className="border-b border-border">
+            {/* 검색 결과 리스트 */}
+            {allPosts.length > 0 ? (
+              <div className="divide-y divide-border">
+                {allPosts.map((post) => {
+                  const catLabel = ISSUE_CATEGORIES.find(c => c.key === post.category)?.label || post.category
+                  const excerpt = stripMarkdown(post.content || '').substring(0, 180)
+                  const dateStr = new Date(post.created_at).toLocaleDateString('ko-KR', { year: 'numeric', month: 'long', day: 'numeric' })
+                  return (
+                    <Link key={post.id} href={`/post/${post.id}`} className="flex gap-5 py-5 group">
+                      <div className="flex-1 min-w-0">
+                        <span className="text-xs font-bold text-muted uppercase tracking-wide">{catLabel}</span>
+                        <h2 className="text-lg font-bold mt-1 mb-1.5 group-hover:text-secondary transition-colors leading-snug">{post.title}</h2>
+                        <p className="text-sm text-secondary line-clamp-2 leading-relaxed">{excerpt}</p>
+                        <div className="flex items-center gap-2 mt-2 text-xs text-muted">
+                          {post.users?.nickname && <span>by {post.users.nickname}</span>}
+                          {post.users?.nickname && <span>·</span>}
+                          <span>{dateStr}</span>
+                          {post.views > 0 && <><span>·</span><span>조회 {post.views}</span></>}
+                        </div>
+                      </div>
+                      {post.thumbnail && (
+                        <div className="w-28 h-20 md:w-36 md:h-24 flex-shrink-0 rounded overflow-hidden">
+                          <img src={post.thumbnail} alt="" className="w-full h-full object-cover" />
+                        </div>
+                      )}
+                    </Link>
+                  )
+                })}
+              </div>
+            ) : (
+              <div className="text-center py-16">
+                <p className="text-muted">"{searchTerm}"에 대한 검색 결과가 없습니다.</p>
+                <Link href="/" className="text-sm text-primary hover:underline mt-2 inline-block">홈으로 돌아가기</Link>
+              </div>
+            )}
+          </div>
+        </section>
+      ) : null}
+
+      {/* ======= 이동네이슈 매거진 영역 (검색 중이 아닐 때만) ======= */}
+      {!searchTerm && <section className="border-b border-border">
         <div className="max-w-6xl mx-auto px-4">
           {/* 메인 레이아웃: 피처드 + 인기 */}
           <div className="grid md:grid-cols-3 gap-6 py-6">
@@ -455,7 +495,7 @@ function HomeContent() {
             </div>
           )}
         </div>
-      </section>
+      </section>}
 
       {/* ======= 커뮤니티 + 업체 찾기 ======= */}
       <section className="max-w-6xl mx-auto px-4 py-10">
