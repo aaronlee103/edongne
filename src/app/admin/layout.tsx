@@ -150,7 +150,7 @@ function AdminLayoutInner({ children }: { children: React.ReactNode }) {
         </aside>
 
         <div className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-border z-50 flex">
-          {NAV.slice(0, 5).map((item) => (
+          {NAV.map((item) => (
             <Link
               key={item.href}
               href={item.href}
