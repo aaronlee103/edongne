@@ -1,7 +1,6 @@
 'use client'
 
 import { useState } from 'react'
-import { createClient } from '@/lib/supabase-client'
 
 const TOPICS = [
   { value: '', label: '문의 주제를 선택해주세요' },
@@ -16,7 +15,6 @@ const TOPICS = [
 ]
 
 export default function ContactPage() {
-  const supabase = createClient()
   const [form, setForm] = useState({
     name: '',
     email: '',
@@ -37,18 +35,23 @@ export default function ContactPage() {
 
     setSubmitting(true)
 
-    const { error } = await supabase.from('inquiries').insert({
-      name: form.name.trim(),
-      email: form.email.trim(),
-      phone: form.phone.trim(),
-      topic: form.topic,
-      message: form.message.trim(),
-    })
+    try {
+      const res = await fetch('/api/contact', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: form.name.trim(),
+          email: form.email.trim(),
+          phone: form.phone.trim(),
+          topic: form.topic,
+          message: form.message.trim(),
+        }),
+      })
 
-    if (error) {
-      alert('문의 접수에 실패했습니다. 이메일(info@edongne.com)로 직접 문의해주세요.')
-    } else {
+      if (!res.ok) throw new Error('Failed')
       setSubmitted(true)
+    } catch {
+      alert('문의 접수에 실패했습니다. 이메일(info@edongne.com)로 직접 문의해주세요.')
     }
     setSubmitting(false)
   }

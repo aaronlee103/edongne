@@ -15,6 +15,7 @@ const NAV = [
   { href: '/admin/ads', label: '광고', icon: '📢' },
   { href: '/admin/magazine', label: '매거진', icon: '📰' },
   { href: '/admin/reports', label: '신고', icon: '🚨' },
+  { href: '/admin/inquiries', label: '문의', icon: '📩' },
 ]
 
 const ALLOWED_ROLES = ['super', 'editor']
