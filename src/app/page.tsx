@@ -42,9 +42,8 @@ function HomeContent() {
   const [issueCategory, setIssueCategory] = useState('all')
   const [allPosts, setAllPosts] = useState<any[]>([])
   const [editorPicks, setEditorPicks] = useState<any[]>([])
-  const [popularPosts, setPopularPosts] = useState<any[]>([])
+
   const [weeklyPopular, setWeeklyPopular] = useState<any[]>([])
-  const [businessCounts, setBusinessCounts] = useState({ realtor: 0, builder: 0, lawyer: 0, mortgage: 0, mover: 0 })
   const [currentPage, setCurrentPage] = useState(1)
   const [searchTerm, setSearchTerm] = useState('')
   const [currentSlide, setCurrentSlide] = useState(0)
@@ -92,7 +91,7 @@ function HomeContent() {
   }, [searchParams])
 
   useEffect(() => {
-    Promise.all([fetchEditorPicks(), fetchPopularPosts(), fetchWeeklyPopular(), fetchBusinessCounts()])
+    Promise.all([fetchEditorPicks(), fetchWeeklyPopular()])
   }, [regionCode])
 
   // regionCode 변경 시에도 fetchAllPosts가 올바른 카테고리로 실행되도록 통합
@@ -131,24 +130,6 @@ function HomeContent() {
     if (data) setAllPosts(data)
   }
 
-  async function fetchPopularPosts() {
-    const { data } = await supabase
-      .from('posts')
-      .select('*, comments(id), votes(value)')
-      .eq('type', 'community')
-      .or('published.is.null,published.eq.true')
-      .or(regionFilter(regionCode))
-      .order('created_at', { ascending: false })
-      .limit(6)
-    if (data) {
-      setPopularPosts(data.map((p: any) => ({
-        ...p,
-        vote_score: p.votes?.reduce((sum: number, v: any) => sum + v.value, 0) || 0,
-        comment_count: p.comments?.length || 0,
-      })))
-    }
-  }
-
   async function fetchWeeklyPopular() {
     const weekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString()
     const { data } = await supabase
@@ -161,22 +142,6 @@ function HomeContent() {
       .order('views', { ascending: false })
       .limit(5)
     if (data) setWeeklyPopular(data)
-  }
-
-  function getBusinessRegionCodes(rc: string): string[] {
-    if (rc === DEFAULT_REGION) return ['NY', 'NJ']
-    return [rc.toUpperCase()]
-  }
-
-  async function fetchBusinessCounts() {
-    const types = ['realtor', 'builder', 'lawyer', 'mortgage', 'mover'] as const
-    const codes = getBusinessRegionCodes(regionCode)
-    const results = await Promise.all(
-      types.map(t => supabase.from('businesses').select('id', { count: 'exact', head: true }).eq('type', t).in('region', codes))
-    )
-    const counts: any = {}
-    types.forEach((t, i) => { counts[t] = results[i].count || 0 })
-    setBusinessCounts(counts)
   }
 
   const CATEGORIES: Record<string, string> = {
@@ -617,53 +582,6 @@ function HomeContent() {
         </section>
       )}
 
-      {/* ======= 커뮤니티 + 업체 찾기 ======= */}
-      <section className="max-w-6xl mx-auto px-4 py-10">
-        <div className="grid md:grid-cols-3 gap-8">
-          {/* 커뮤니티 인기글 */}
-          <div className="md:col-span-2">
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="text-xl font-bold">커뮤니티</h2>
-              <Link href="/board" className="text-sm text-muted hover:text-primary">더보기 →</Link>
-            </div>
-            {popularPosts.length > 0 ? (
-              <div className="space-y-1">
-                {popularPosts.map((post) => (
-                  <Link key={post.id} href={`/post/${post.id}`} className="flex items-center gap-3 py-3 border-b border-border hover:bg-gray-50 px-2 rounded transition-colors">
-                    <span className="text-xs text-muted font-medium w-16 shrink-0">{CATEGORIES[post.category] || post.category}</span>
-                    <span className="text-sm flex-1 truncate">{post.title}</span>
-                    <span className="text-xs text-muted shrink-0">💬 {post.comment_count}</span>
-                    <span className="text-xs text-muted shrink-0">▲ {post.vote_score}</span>
-                  </Link>
-                ))}
-              </div>
-            ) : (
-              <div className="text-center py-8 border border-dashed border-border rounded-lg">
-                <p className="text-sm text-muted mb-2">아직 게시글이 없습니다</p>
-                <Link href="/write" className="text-sm bg-black text-white px-4 py-1.5 rounded-full hover:bg-gray-800">첫 글 작성하기</Link>
-              </div>
-            )}
-          </div>
-
-          {/* 업체 찾기 사이드바 */}
-          <aside>
-            <h2 className="text-xl font-bold mb-6">업체 찾기</h2>
-            <div className="space-y-3">
-              <DirectoryLink href="/realtors" label="부동산 리얼터" count={businessCounts.realtor} />
-              <DirectoryLink href="/builders" label="건축/인테리어" count={businessCounts.builder} />
-              <DirectoryLink href="/lawyers" label="변호사" count={businessCounts.lawyer} />
-              <DirectoryLink href="/mortgage" label="융자/모기지" count={businessCounts.mortgage} />
-              <DirectoryLink href="/movers" label="이사" count={businessCounts.mover} />
-            </div>
-
-            <div className="mt-8 p-4 bg-bg-light rounded-lg border border-border">
-              <h3 className="font-semibold text-sm mb-2">업체 등록 안내</h3>
-              <p className="text-xs text-muted mb-3">이동네에 업체를 등록하고 더 많은 고객을 만나보세요.</p>
-              <Link href="/business-register" className="text-xs font-medium text-primary hover:underline">업체 등록하기 →</Link>
-            </div>
-          </aside>
-        </div>
-      </section>
     </div>
   )
 }
@@ -702,11 +620,3 @@ function Pagination({ currentPage, totalPages, onPageChange }: { currentPage: nu
   )
 }
 
-function DirectoryLink({ href, label, count }: { href: string; label: string; count: number }) {
-  return (
-    <Link href={href} className="flex items-center justify-between p-3 border border-border rounded-lg hover:bg-gray-50 transition-colors">
-      <span className="text-sm font-medium">{label}</span>
-      <span className="text-xs text-muted">{count}개</span>
-    </Link>
-  )
-}
