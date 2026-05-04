@@ -92,35 +92,50 @@ function insertInlineAd(htmlContent: string): string {
   return parts.join('</p>')
 }
 
-export default function PostContent() {
+export default function PostContent({ initialPost }: { initialPost?: any }) {
   const params = useParams()
   const router = useRouter()
   const postId = params.id as string
   const supabase = createClient()
 
-  const [post, setPost] = useState<any>(null)
+  // 서버에서 전달받은 데이터가 있으면 바로 사용 (로딩 없음)
+  const processedInitialPost = initialPost ? {
+    ...initialPost,
+    vote_score: initialPost.votes?.reduce((sum: number, v: any) => sum + v.value, 0) || 0,
+  } : null
+
+  const [post, setPost] = useState<any>(processedInitialPost)
   const [comments, setComments] = useState<any[]>([])
   const [commentText, setCommentText] = useState('')
   const [user, setUser] = useState<any>(null)
   const [role, setRole] = useState<string>('user')
-  const [loading, setLoading] = useState(true)
+  const [loading, setLoading] = useState(!initialPost)
   const [liked, setLiked] = useState(false)
   const [likeCount, setLikeCount] = useState(0)
   const [likeLoading, setLikeLoading] = useState(false)
   const [relatedPosts, setRelatedPosts] = useState<any[]>([])
 
   useEffect(() => {
-    // 병렬로 모든 초기 데이터 로드
+    // 병렬로 보조 데이터 로드 (댓글, 좋아요, 인증, 관련글)
     async function loadAll() {
-      const [authResult, postResult, commentsResult, likesResult] = await Promise.all([
-        supabase.auth.getUser(),
-        supabase.from('posts').select('*, users(nickname, avatar_animal), votes(value)').eq('id', postId).single(),
+      // 서버에서 post를 이미 받았으면 post 쿼리 생략
+      const queries: Promise<any>[] = [
+        supabase.auth.getSession(),
         supabase.from('comments').select('*, users(nickname, avatar_animal)').eq('post_id', postId).order('created_at', { ascending: true }),
         supabase.from('votes').select('id, user_id').eq('post_id', postId).eq('value', 1),
-      ])
+      ]
+      if (!initialPost) {
+        queries.push(supabase.from('posts').select('*, users(nickname, avatar_animal), votes(value)').eq('id', postId).single())
+      }
 
-      // 유저 정보 처리
-      const currentUser = authResult.data.user
+      const results = await Promise.all(queries)
+      const authResult = results[0]
+      const commentsResult = results[1]
+      const likesResult = results[2]
+      const postResult = !initialPost ? results[3] : null
+
+      // 유저 정보 처리 (getSession은 로컬 캐시에서 읽음 - 네트워크 요청 없음)
+      const currentUser = authResult.data?.session?.user ?? null
       setUser(currentUser)
       if (currentUser) {
         const { data: u } = await supabase.from('users').select('role').eq('id', currentUser.id).single()
@@ -128,13 +143,17 @@ export default function PostContent() {
         setLiked(!!likesResult.data?.some((v: any) => v.user_id === currentUser.id))
       }
 
-      // 포스트 처리
-      if (postResult.data) {
+      // 포스트 처리 (서버 데이터가 없을 때만)
+      if (!initialPost && postResult?.data) {
         const data = postResult.data
         setPost({ ...data, vote_score: data.votes?.reduce((sum: number, v: any) => sum + v.value, 0) || 0 })
-        supabase.from('posts').update({ views: (data.views || 0) + 1 }).eq('id', postId)
-        // 관련 글은 카테고리를 알아야 하므로 여기서 호출
-        const { data: related } = await supabase.from('posts').select('id, title, thumbnail, created_at').eq('category', data.category).neq('id', postId).or('published.is.null,published.eq.true').order('created_at', { ascending: false }).limit(4)
+      }
+
+      // 조회수 업데이트 + 관련 글 로드
+      const currentPost = initialPost || postResult?.data
+      if (currentPost) {
+        supabase.from('posts').update({ views: (currentPost.views || 0) + 1 }).eq('id', postId)
+        const { data: related } = await supabase.from('posts').select('id, title, thumbnail, created_at').eq('category', currentPost.category).neq('id', postId).or('published.is.null,published.eq.true').order('created_at', { ascending: false }).limit(4)
         if (related) setRelatedPosts(related)
       }
 

@@ -80,7 +80,7 @@ export default async function PostPage({ params }: { params: { id: string } }) {
   const supabase = createServerSupabase()
   const { data: post } = await supabase
     .from('posts')
-    .select('title, content, thumbnail, category, created_at, type, users(nickname)')
+    .select('*, users(nickname, avatar_animal), votes(value)')
     .eq('id', params.id)
     .single()
 
@@ -150,7 +150,7 @@ export default async function PostPage({ params }: { params: { id: string } }) {
           dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }}
         />
       )}
-      <PostContent />
+      <PostContent initialPost={post} />
     </>
   )
 }

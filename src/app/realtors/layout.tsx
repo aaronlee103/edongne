@@ -1,6 +1,8 @@
 import { Metadata } from 'next'
 import { createServerSupabase } from '@/lib/supabase-server'
 
+export const revalidate = 300 // 5분마다 재생성
+
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://www.edongne.com'
 
 export const metadata: Metadata = {
