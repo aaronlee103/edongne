@@ -24,7 +24,7 @@ export default async function Home() {
   const [editorPicksResult, allPostsResult, weeklyPopularResult] = await Promise.all([
     supabase
       .from('posts')
-      .select('*, users(nickname)')
+      .select('id, title, thumbnail, category, content, created_at, views, region, type, published, users(nickname)')
       .eq('type', 'magazine')
       .eq('category', 'editor')
       .or('published.is.null,published.eq.true')
@@ -33,14 +33,15 @@ export default async function Home() {
       .limit(5),
     supabase
       .from('posts')
-      .select('*, users(nickname)')
+      .select('id, title, thumbnail, category, content, created_at, views, region, type, published, users(nickname)')
       .eq('type', 'magazine')
       .or('published.is.null,published.eq.true')
       .or(regionFilter(regionCode))
-      .order('created_at', { ascending: false }),
+      .order('created_at', { ascending: false })
+      .limit(100),
     supabase
       .from('posts')
-      .select('*, users(nickname)')
+      .select('id, title, thumbnail, category, content, created_at, views, region, type, published, users(nickname)')
       .eq('type', 'magazine')
       .or('published.is.null,published.eq.true')
       .or(regionFilter(regionCode))

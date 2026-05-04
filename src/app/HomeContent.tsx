@@ -145,7 +145,7 @@ function HomeContent({ initialEditorPicks, initialAllPosts, initialWeeklyPopular
   async function fetchEditorPicks() {
     const { data } = await supabase
       .from('posts')
-      .select('*, users(nickname)')
+      .select('id, title, thumbnail, category, content, created_at, views, region, type, published, users(nickname)')
       .eq('type', 'magazine')
       .eq('category', 'editor')
       .or('published.is.null,published.eq.true')
@@ -158,7 +158,7 @@ function HomeContent({ initialEditorPicks, initialAllPosts, initialWeeklyPopular
   async function fetchAllPosts() {
     let query = supabase
       .from('posts')
-      .select('*, users(nickname)')
+      .select('id, title, thumbnail, category, content, created_at, views, region, type, published, users(nickname)')
       .eq('type', 'magazine')
       .or('published.is.null,published.eq.true')
       .or(regionFilter(regionCode))
@@ -168,7 +168,7 @@ function HomeContent({ initialEditorPicks, initialAllPosts, initialWeeklyPopular
     } else if (issueCategory !== 'all') {
       query = query.eq('category', issueCategory)
     }
-    const { data } = await query
+    const { data } = await query.limit(100)
     if (data) setAllPosts(data)
   }
 
@@ -176,7 +176,7 @@ function HomeContent({ initialEditorPicks, initialAllPosts, initialWeeklyPopular
     const weekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString()
     const { data } = await supabase
       .from('posts')
-      .select('*, users(nickname)')
+      .select('id, title, thumbnail, category, content, created_at, views, region, type, published, users(nickname)')
       .eq('type', 'magazine')
       .or('published.is.null,published.eq.true')
       .or(regionFilter(regionCode))

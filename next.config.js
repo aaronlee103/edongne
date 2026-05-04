@@ -1,5 +1,6 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  compress: true,
   eslint: {
     // Pre-existing lint warnings in admin/* shouldn't block production deploys.
     // Local `npm run lint` still works for catching issues during development.
@@ -11,6 +12,8 @@ const nextConfig = {
     ignoreBuildErrors: true,
   },
   images: {
+    formats: ['image/webp'],
+    minimumCacheTTL: 2592000,
     remotePatterns: [
       {
         protocol: 'https',
