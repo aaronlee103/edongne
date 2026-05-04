@@ -41,23 +41,34 @@ export default function Header() {
   const currentCategory = searchParams.get('category') || 'all'
   const { region, setRegionCode, allRegions } = useRegion()
 
+  const roleCacheRef = useRef<Record<string, string>>({})
+
   async function fetchRole(uid: string) {
+    // Return cached role if available
+    if (roleCacheRef.current[uid]) {
+      setRole(roleCacheRef.current[uid])
+      return
+    }
     const { data } = await supabase
       .from('users')
       .select('role')
       .eq('id', uid)
       .single()
-    if (data?.role) setRole(data.role)
+    if (data?.role) {
+      roleCacheRef.current[uid] = data.role
+      setRole(data.role)
+    }
   }
 
   useEffect(() => {
-    // 현재 세션 확인
-    supabase.auth.getUser().then(({ data }) => {
-      setUser(data.user)
-      if (data.user) fetchRole(data.user.id)
+    // Use getSession() instead of getUser() — reads from local cache, no network request
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      const currentUser = session?.user ?? null
+      setUser(currentUser)
+      if (currentUser) fetchRole(currentUser.id)
     })
 
-    // 인증 상태 변화 구독
+    // Auth state changes (login/logout) are handled reactively
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setUser(session?.user ?? null)
       if (session?.user) fetchRole(session.user.id)

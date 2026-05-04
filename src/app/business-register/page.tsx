@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
+import Image from 'next/image'
 import { createClient } from '@/lib/supabase-client'
 import { uploadImage } from '@/lib/upload'
 
@@ -267,10 +268,10 @@ export default function BusinessRegisterPage() {
               <label className="block text-sm font-medium mb-2">대표 이미지</label>
               <p className="text-xs text-muted mb-2">업체 페이지 상단에 표시됩니다. (최대 2MB)</p>
               {heroImage ? (
-                <div className="relative inline-block">
-                  <img src={heroImage} alt="대표 이미지" className="w-full max-w-sm sm:max-w-md h-48 object-cover rounded-lg border border-border" />
+                <div className="relative w-full max-w-sm sm:max-w-md h-48">
+                  <Image src={heroImage} alt="대표 이미지" fill sizes="(max-width: 640px) 100vw, 448px" className="object-cover rounded-lg border border-border" />
                   <button type="button" onClick={() => setHeroImage('')}
-                    className="absolute top-2 right-2 w-7 h-7 bg-black/70 text-white rounded-full text-xs flex items-center justify-center hover:bg-black">✕</button>
+                    className="absolute top-2 right-2 w-7 h-7 bg-black/70 text-white rounded-full text-xs flex items-center justify-center hover:bg-black z-10">✕</button>
                 </div>
               ) : (
                 <label className="inline-flex w-full max-w-sm sm:max-w-md h-36 border-2 border-dashed border-border rounded-lg cursor-pointer hover:bg-gray-50 items-center justify-center">
@@ -309,7 +310,9 @@ export default function BusinessRegisterPage() {
               <div className="grid grid-cols-2 md:grid-cols-3 gap-3 mb-3">
                 {portfolio.map((item, i) => (
                   <div key={i} className="relative">
-                    <img src={item.url} alt={`포트폴리오 ${i + 1}`} className="w-full h-32 object-cover rounded-lg border border-border" />
+                    <div className="relative w-full h-32">
+                      <Image src={item.url} alt={`포트폴리오 ${i + 1}`} fill sizes="(max-width: 640px) 50vw, 200px" className="object-cover rounded-lg border border-border" />
+                    </div>
                     <button type="button" onClick={() => removePortfolioImage(i)}
                       className="absolute top-1 right-1 w-6 h-6 bg-black/70 text-white rounded-full text-xs flex items-center justify-center hover:bg-black">✕</button>
                     <input
