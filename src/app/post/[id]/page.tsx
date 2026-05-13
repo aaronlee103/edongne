@@ -42,7 +42,15 @@ export async function generateMetadata(
     .single()
 
   if (!post) {
-    return { title: '게시글을 찾을 수 없습니다' }
+    return {
+      title: '게시글을 찾을 수 없습니다',
+      description: '요청하신 게시글이 삭제되었거나 존재하지 않습니다.',
+      robots: {
+        index: false,
+        follow: false,
+        googleBot: { index: false, follow: false },
+      },
+    }
   }
 
   const plainContent = stripMarkdown(post.content || '')
