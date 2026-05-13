@@ -86,12 +86,12 @@ export default function Footer() {
             </div>
           </div>
           <div>
-            <h4 className="font-semibold mb-3">커뮤니티</h4>
+            <h4 className="font-semibold mb-3">부동산 가이드</h4>
             <ul className="space-y-1.5 text-muted">
+              <li><Link href="/realestate/nj" className="hover:text-primary">뉴저지 부동산 가이드</Link></li>
+              <li><Link href="/realestate/ny" className="hover:text-primary">뉴욕 부동산 가이드</Link></li>
               <li><Link href="/board" className="hover:text-primary">자유게시판</Link></li>
               <li><Link href="/board?cat=qna" className="hover:text-primary">질문답변</Link></li>
-              <li><Link href="/board?cat=buysell" className="hover:text-primary">사고팔고</Link></li>
-
             </ul>
           </div>
           <div>
