@@ -120,6 +120,8 @@ export default async function PostPage({ params }: { params: { id: string } }) {
     image: {
       '@type': 'ImageObject',
       url: articleImage,
+      width: 1536,
+      height: 1024,
     },
     articleSection: CATEGORY_LABELS[post.category] || post.category,
     inLanguage: 'ko',
