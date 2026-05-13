@@ -1,4 +1,5 @@
 import { Metadata } from 'next'
+import { notFound } from 'next/navigation'
 import { createServerSupabase } from '@/lib/supabase-server'
 import PostContent from './PostContent'
 
@@ -83,6 +84,11 @@ export default async function PostPage({ params }: { params: { id: string } }) {
     .select('*, users(nickname, avatar_animal), votes(value)')
     .eq('id', params.id)
     .single()
+
+  // Return proper 404 status for deleted/missing posts (prevents Soft 404 SEO issue)
+  if (!post) {
+    notFound()
+  }
 
   // JSON-LD 구조화 데이터 (구글 뉴스/리치 결과)
   // 이미지 우선순위: 썸네일 > 본문 첫 이미지 > 사이트 기본 아이콘 (폴백)
