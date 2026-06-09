@@ -38,7 +38,7 @@ export default function RealEstateIndexPage() {
         </p>
       </header>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-12">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
         <Link
           href="/realestate/nj"
           className="block bg-white border-2 border-gray-200 hover:border-[#FF6B35] rounded-2xl p-6 transition"
@@ -57,6 +57,17 @@ export default function RealEstateIndexPage() {
           <h2 className="text-2xl font-bold text-gray-900 mb-2">뉴욕 부동산</h2>
           <p className="text-gray-600 mb-4">
             Flushing · Bayside · Great Neck · Manhasset 한인 인기 동네, Co-op vs Condo, 매수 절차, Mansion Tax까지.
+          </p>
+          <span className="text-[#FF6B35] font-semibold">완벽 가이드 보기 →</span>
+        </Link>
+
+        <Link
+          href="/realestate/tx"
+          className="block bg-white border-2 border-gray-200 hover:border-[#FF6B35] rounded-2xl p-6 transition"
+        >
+          <h2 className="text-2xl font-bold text-gray-900 mb-2">텍사스 부동산</h2>
+          <p className="text-gray-600 mb-4">
+            Carrollton · Plano · Frisco · Sugar Land · Katy 한인 동네와 무소득세 혜택, Plano ISD 학군, 매수 절차까지.
           </p>
           <span className="text-[#FF6B35] font-semibold">완벽 가이드 보기 →</span>
         </Link>

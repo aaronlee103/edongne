@@ -90,6 +90,7 @@ export default function Footer() {
             <ul className="space-y-1.5 text-muted">
               <li><Link href="/realestate/nj" className="hover:text-primary">뉴저지 부동산 가이드</Link></li>
               <li><Link href="/realestate/ny" className="hover:text-primary">뉴욕 부동산 가이드</Link></li>
+              <li><Link href="/realestate/tx" className="hover:text-primary">텍사스 부동산 가이드</Link></li>
               <li><Link href="/board" className="hover:text-primary">자유게시판</Link></li>
               <li><Link href="/board?cat=qna" className="hover:text-primary">질문답변</Link></li>
             </ul>
