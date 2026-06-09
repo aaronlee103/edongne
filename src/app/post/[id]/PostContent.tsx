@@ -51,6 +51,22 @@ function renderMarkdownTable(block: string): string {
   return html
 }
 
+function stripLeadingThumbnailImage(content: string, thumbnailUrl: string | null | undefined): string {
+  if (!thumbnailUrl || !content) return content
+  // 첫 200자 이내에 있는 첫 이미지 마크다운 검사
+  const head = content.slice(0, 300)
+  const match = head.match(/!\[([^\]]*)\]\(([^)]+)\)/)
+  if (!match) return content
+  const firstImgUrl = match[2].trim()
+  // URL 정확히 일치 OR 파일명 일치 (캐시 버스터 등으로 query 다를 수 있음)
+  const fileName = (url: string) => url.split('?')[0].split('/').pop() || ''
+  const same = firstImgUrl === thumbnailUrl || fileName(firstImgUrl) === fileName(thumbnailUrl)
+  if (same) {
+    return content.replace(match[0], '').replace(/^\s+/, '')
+  }
+  return content
+}
+
 function renderMarkdown(text: string): string {
   const tokens: string[] = []
   let processed = text.replace(
@@ -253,8 +269,21 @@ export default function PostContent({ initialPost }: { initialPost?: any }) {
               )}
             </div>
 
+            {/* 대표 이미지 자동 표시 (매거진 글에만) */}
+            {isMagazine && post.thumbnail && (
+              <div className="mb-6 -mx-4 md:mx-0">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={post.thumbnail}
+                  alt={post.title}
+                  className="w-full md:rounded-xl object-cover"
+                  style={{ maxHeight: '480px' }}
+                />
+              </div>
+            )}
+
             {isMagazine ? (
-              <div className="prose prose-sm max-w-none text-sm leading-relaxed" dangerouslySetInnerHTML={{ __html: insertInlineAd(renderMarkdown(post.content)) }} />
+              <div className="prose prose-sm max-w-none text-sm leading-relaxed" dangerouslySetInnerHTML={{ __html: insertInlineAd(renderMarkdown(stripLeadingThumbnailImage(post.content, post.thumbnail))) }} />
             ) : (
               <div className="prose prose-sm max-w-none whitespace-pre-wrap text-sm leading-relaxed">{post.content}</div>
             )}
