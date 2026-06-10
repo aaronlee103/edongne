@@ -165,11 +165,28 @@ export default function PostContent({ initialPost }: { initialPost?: any }) {
         setPost({ ...data, vote_score: data.votes?.reduce((sum: number, v: any) => sum + v.value, 0) || 0 })
       }
 
-      // 조회수 업데이트 + 관련 글 로드
+      // 조회수 업데이트 + 관련 글 로드 (같은 region 또는 'all' 공통글만 매칭)
       const currentPost = initialPost || postResult?.data
       if (currentPost) {
         supabase.from('posts').update({ views: (currentPost.views || 0) + 1 }).eq('id', postId)
-        const { data: related } = await supabase.from('posts').select('id, title, thumbnail, created_at').eq('category', currentPost.category).neq('id', postId).or('published.is.null,published.eq.true').order('created_at', { ascending: false }).limit(4)
+        // Region grouping — Texas regions (dallas/houston) are treated as one group
+        const currentRegion = currentPost.region || 'ny'
+        const TX_REGIONS = ['dallas', 'houston']
+        const regionList = TX_REGIONS.includes(currentRegion)
+          ? ['dallas', 'houston', 'all']
+          : currentRegion === 'all'
+            ? null
+            : [currentRegion, 'all']
+        let relatedQuery = supabase
+          .from('posts')
+          .select('id, title, thumbnail, created_at, region')
+          .eq('category', currentPost.category)
+          .neq('id', postId)
+          .or('published.is.null,published.eq.true')
+        if (regionList) {
+          relatedQuery = relatedQuery.in('region', regionList)
+        }
+        const { data: related } = await relatedQuery.order('created_at', { ascending: false }).limit(4)
         if (related) setRelatedPosts(related)
       }
 
