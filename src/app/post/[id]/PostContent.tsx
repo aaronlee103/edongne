@@ -165,7 +165,7 @@ export default function PostContent({ initialPost }: { initialPost?: any }) {
         setPost({ ...data, vote_score: data.votes?.reduce((sum: number, v: any) => sum + v.value, 0) || 0 })
       }
 
-      // 조회수 업데이트 + 관련 글 로드 (같은 region 또는 'all' 공통글만 매칭)
+      // 조회수 업데이트 + 관련 글 로드 (3-tier fallback)
       const currentPost = initialPost || postResult?.data
       if (currentPost) {
         supabase.from('posts').update({ views: (currentPost.views || 0) + 1 }).eq('id', postId)
@@ -177,17 +177,48 @@ export default function PostContent({ initialPost }: { initialPost?: any }) {
           : currentRegion === 'all'
             ? null
             : [currentRegion, 'all']
-        let relatedQuery = supabase
+
+        // Tier 1: same category + same region group
+        let tier1Query = supabase
           .from('posts')
-          .select('id, title, thumbnail, created_at, region')
+          .select('id, title, thumbnail, created_at, region, category')
           .eq('category', currentPost.category)
           .neq('id', postId)
           .or('published.is.null,published.eq.true')
-        if (regionList) {
-          relatedQuery = relatedQuery.in('region', regionList)
+        if (regionList) tier1Query = tier1Query.in('region', regionList)
+        const { data: tier1 } = await tier1Query.order('created_at', { ascending: false }).limit(4)
+
+        let combined: any[] = tier1 || []
+
+        // Tier 2: if <4, fill with OTHER categories from same region group
+        if (combined.length < 4 && regionList) {
+          const excludeIds = [postId, ...combined.map(p => p.id)]
+          let tier2Query = supabase
+            .from('posts')
+            .select('id, title, thumbnail, created_at, region, category')
+            .eq('type', 'magazine')
+            .in('region', regionList)
+            .not('id', 'in', `(${excludeIds.join(',')})`)
+            .or('published.is.null,published.eq.true')
+          const { data: tier2 } = await tier2Query.order('created_at', { ascending: false }).limit(4 - combined.length)
+          if (tier2) combined = [...combined, ...tier2]
         }
-        const { data: related } = await relatedQuery.order('created_at', { ascending: false }).limit(4)
-        if (related) setRelatedPosts(related)
+
+        // Tier 3: if still <4, fill with same category from any region
+        if (combined.length < 4) {
+          const excludeIds = [postId, ...combined.map(p => p.id)]
+          const { data: tier3 } = await supabase
+            .from('posts')
+            .select('id, title, thumbnail, created_at, region, category')
+            .eq('category', currentPost.category)
+            .not('id', 'in', `(${excludeIds.join(',')})`)
+            .or('published.is.null,published.eq.true')
+            .order('created_at', { ascending: false })
+            .limit(4 - combined.length)
+          if (tier3) combined = [...combined, ...tier3]
+        }
+
+        setRelatedPosts(combined)
       }
 
       // 댓글 & 좋아요 처리
