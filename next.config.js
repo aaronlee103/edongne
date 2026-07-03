@@ -12,6 +12,10 @@ const nextConfig = {
     ignoreBuildErrors: true,
   },
   images: {
+    // Bypass Vercel image optimization — our thumbnails are already compressed
+    // JPGs (40-120KB) so no additional optimization needed, and Vercel's Hobby
+    // plan quota was exhausted causing new images to return 402.
+    unoptimized: true,
     formats: ['image/webp'],
     minimumCacheTTL: 2592000,
     remotePatterns: [
