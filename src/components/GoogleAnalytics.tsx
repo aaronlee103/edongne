@@ -2,7 +2,8 @@
 
 import Script from 'next/script'
 
-const GA_ID = process.env.NEXT_PUBLIC_GA_ID
+// edongne 단독 GA4 계정 (2026-07-05 교체) — 이전 ODIYA 하위 속성(G-C5KTNZ9VBZ)은 폐기
+const GA_ID = 'G-8ZMZSY4CVQ'
 
 export default function GoogleAnalytics() {
   if (!GA_ID) return null
