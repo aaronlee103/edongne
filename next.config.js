@@ -12,12 +12,14 @@ const nextConfig = {
     ignoreBuildErrors: true,
   },
   images: {
-    // Bypass Vercel image optimization — our thumbnails are already compressed
-    // JPGs (40-120KB) so no additional optimization needed, and Vercel's Hobby
-    // plan quota was exhausted causing new images to return 402.
-    unoptimized: true,
-    formats: ['image/webp'],
-    minimumCacheTTL: 2592000,
+    // Vercel Pro (2026-07): image optimization re-enabled.
+    // Thumbnails are 40-260KB source JPGs — optimizer serves responsive
+    // AVIF/WebP (typically 5-30KB per slot), cached at the edge.
+    // Filenames are timestamped (gen_*/fix_*/bright_*) so 1-year TTL is safe.
+    formats: ['image/avif', 'image/webp'],
+    deviceSizes: [640, 750, 828, 1080, 1200, 1920],
+    imageSizes: [64, 96, 128, 160, 256, 384],
+    minimumCacheTTL: 31536000,
     remotePatterns: [
       {
         protocol: 'https',
