@@ -6,6 +6,17 @@ import HomeContentWrapper from './HomeContent'
 // Revalidate every 60 seconds (ISR)
 export const revalidate = 60
 
+function stripMarkdown(text: string): string {
+  return text
+    .replace(/!\[[^\]]*\]\([^)]+\)/g, '')
+    .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1')
+    .replace(/^#{1,3}\s+/gm, '')
+    .replace(/\*\*(.+?)\*\*/g, '$1')
+    .replace(/\*(.+?)\*/g, '$1')
+    .replace(/\n{2,}/g, ' ')
+    .trim()
+}
+
 function regionFilter(regionCode: string): string {
   if (regionCode === DEFAULT_REGION) {
     return `region.eq.${regionCode},region.eq.all,region.is.null`
@@ -50,11 +61,16 @@ export default async function Home() {
       .limit(5),
   ])
 
+  // 홈에서는 본문 전체가 필요 없다 (최대 200자 발췌만 표시).
+  // 100건 × ~6KB 본문을 그대로 내려보내면 HTML이 700KB를 넘으므로 여기서 잘라 보낸다.
+  const trim = <T extends { content?: string | null }>(rows: T[]) =>
+    rows.map((p) => ({ ...p, content: stripMarkdown(p.content || '').slice(0, 300) }))
+
   return (
     <HomeContentWrapper
-      initialEditorPicks={editorPicksResult.data || []}
-      initialAllPosts={allPostsResult.data || []}
-      initialWeeklyPopular={weeklyPopularResult.data || []}
+      initialEditorPicks={trim(editorPicksResult.data || [])}
+      initialAllPosts={trim(allPostsResult.data || [])}
+      initialWeeklyPopular={trim(weeklyPopularResult.data || [])}
       initialRegion={regionCode}
     />
   )
