@@ -35,7 +35,7 @@ export default async function Home() {
   const [editorPicksResult, allPostsResult, weeklyPopularResult] = await Promise.all([
     supabase
       .from('posts')
-      .select('id, title, thumbnail, category, content, created_at, views, region, type, published, users(nickname)')
+      .select('id, title, thumbnail, category, content:excerpt, created_at, views, region, type, published, users(nickname)')
       .eq('type', 'magazine')
       .eq('category', 'editor')
       .or('published.is.null,published.eq.true')
@@ -44,7 +44,7 @@ export default async function Home() {
       .limit(5),
     supabase
       .from('posts')
-      .select('id, title, thumbnail, category, content, created_at, views, region, type, published, users(nickname)')
+      .select('id, title, thumbnail, category, content:excerpt, created_at, views, region, type, published, users(nickname)')
       .eq('type', 'magazine')
       .or('published.is.null,published.eq.true')
       .or(regionFilter(regionCode))
@@ -52,7 +52,7 @@ export default async function Home() {
       .limit(100),
     supabase
       .from('posts')
-      .select('id, title, thumbnail, category, content, created_at, views, region, type, published, users(nickname)')
+      .select('id, title, thumbnail, category, content:excerpt, created_at, views, region, type, published, users(nickname)')
       .eq('type', 'magazine')
       .or('published.is.null,published.eq.true')
       .or(regionFilter(regionCode))
@@ -62,7 +62,8 @@ export default async function Home() {
   ])
 
   // 홈에서는 본문 전체가 필요 없다 (최대 200자 발췌만 표시).
-  // 100건 × ~6KB 본문을 그대로 내려보내면 HTML이 700KB를 넘으므로 여기서 잘라 보낸다.
+  // DB에서 본문 전체 대신 posts.excerpt(본문 앞 600자, generated column)를 content 라는 이름으로 받는다.
+  // 100건 조회가 약 1MB → 150KB 로 줄어 Supabase 전송량과 응답 시간을 아낀다.
   const trim = <T extends { content?: string | null }>(rows: T[]) =>
     rows.map((p) => ({ ...p, content: stripMarkdown(p.content || '').slice(0, 300) }))
 
