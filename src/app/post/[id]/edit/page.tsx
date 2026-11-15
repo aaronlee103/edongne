@@ -215,17 +215,6 @@ export default function EditPostPage() {
               {[
                 { code: 'all', label: '전체' },
                 { code: 'ny', label: '뉴욕/뉴저지' },
-                { code: 'la', label: '로스앤젤레스' },
-                { code: 'dc', label: '워싱턴 DC' },
-                { code: 'seattle', label: '시애틀' },
-                { code: 'chicago', label: '시카고' },
-                { code: 'sf', label: '샌프란시스코' },
-                { code: 'atlanta', label: '애틀랜타' },
-                { code: 'philly', label: '필라델피아' },
-                { code: 'dallas', label: '달라스' },
-                { code: 'houston', label: '휴스턴' },
-                { code: 'hawaii', label: '하와이' },
-                { code: 'boston', label: '보스턴' },
               ].map(r => (
                 <button
                   key={r.code}

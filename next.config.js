@@ -31,6 +31,12 @@ const nextConfig = {
       },
     ],
   },
+  async redirects() {
+    return [
+      // 2026-11: 텍사스 섹션 종료 — 예전 주소는 부동산 허브로 보낸다
+      { source: '/realestate/tx', destination: '/realestate', permanent: true },
+    ]
+  },
   async headers() {
     return [
       {

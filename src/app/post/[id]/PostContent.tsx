@@ -169,14 +169,8 @@ export default function PostContent({ initialPost }: { initialPost?: any }) {
       const currentPost = initialPost || postResult?.data
       if (currentPost) {
         supabase.from('posts').update({ views: (currentPost.views || 0) + 1 }).eq('id', postId)
-        // Region grouping — Texas regions (dallas/houston) are treated as one group
         const currentRegion = currentPost.region || 'ny'
-        const TX_REGIONS = ['dallas', 'houston']
-        const regionList = TX_REGIONS.includes(currentRegion)
-          ? ['dallas', 'houston', 'all']
-          : currentRegion === 'all'
-            ? null
-            : [currentRegion, 'all']
+        const regionList = currentRegion === 'all' ? null : [currentRegion, 'all']
 
         // Tier 1: same category + same region group
         let tier1Query = supabase
