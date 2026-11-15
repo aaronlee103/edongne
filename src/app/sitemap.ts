@@ -12,7 +12,6 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: `${SITE_URL}/realestate`, lastModified: new Date(), changeFrequency: 'weekly', priority: 0.95 },
     { url: `${SITE_URL}/realestate/nj`, lastModified: new Date(), changeFrequency: 'weekly', priority: 0.95 },
     { url: `${SITE_URL}/realestate/ny`, lastModified: new Date(), changeFrequency: 'weekly', priority: 0.95 },
-    { url: `${SITE_URL}/realestate/tx`, lastModified: new Date(), changeFrequency: 'weekly', priority: 0.95 },
     { url: `${SITE_URL}/board`, lastModified: new Date(), changeFrequency: 'daily', priority: 0.8 },
     { url: `${SITE_URL}/realtors`, lastModified: new Date(), changeFrequency: 'weekly', priority: 0.7 },
     { url: `${SITE_URL}/builders`, lastModified: new Date(), changeFrequency: 'weekly', priority: 0.7 },
@@ -29,6 +28,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     .from('posts')
     .select('id, created_at, type')
     .or('published.is.null,published.eq.true')
+    .or('region.eq.ny,region.eq.all,region.is.null')
     .order('created_at', { ascending: false })
 
   const postPages: MetadataRoute.Sitemap = (posts || []).map((post) => ({

@@ -3,7 +3,7 @@ import { createServerClient } from '@supabase/ssr'
 
 const REGION_COOKIE = 'edongne_region'
 const DEFAULT_REGION = 'ny'
-const VALID_REGIONS = ['ny', 'la', 'dc', 'seattle', 'chicago', 'sf', 'atlanta', 'philly', 'dallas', 'houston', 'hawaii', 'boston']
+const VALID_REGIONS = ['ny']
 
 // Regions that are publicly accessible. Subdomains for regions NOT in this
 // list are admin-only — non-admin visitors get redirected to www.
@@ -15,18 +15,6 @@ const CITY_MAP: Record<string, string> = {
   'new york': 'ny', 'brooklyn': 'ny', 'queens': 'ny', 'bronx': 'ny', 'manhattan': 'ny',
   'jersey city': 'ny', 'newark': 'ny', 'fort lee': 'ny', 'palisades park': 'ny',
   'edgewater': 'ny', 'hackensack': 'ny', 'paramus': 'ny', 'tenafly': 'ny',
-  'los angeles': 'la', 'irvine': 'la', 'fullerton': 'la', 'torrance': 'la',
-  'buena park': 'la', 'garden grove': 'la', 'anaheim': 'la', 'glendale': 'la',
-  'washington': 'dc', 'annandale': 'dc', 'centreville': 'dc', 'fairfax': 'dc', 'arlington': 'dc',
-  'seattle': 'seattle', 'bellevue': 'seattle', 'federal way': 'seattle', 'tacoma': 'seattle',
-  'chicago': 'chicago', 'glenview': 'chicago', 'niles': 'chicago', 'palatine': 'chicago',
-  'san francisco': 'sf', 'san jose': 'sf', 'santa clara': 'sf', 'sunnyvale': 'sf',
-  'atlanta': 'atlanta', 'duluth': 'atlanta', 'suwanee': 'atlanta', 'lawrenceville': 'atlanta',
-  'philadelphia': 'philly', 'cheltenham': 'philly',
-  'dallas': 'dallas', 'carrollton': 'dallas', 'plano': 'dallas', 'frisco': 'dallas',
-  'houston': 'houston', 'sugar land': 'houston', 'katy': 'houston',
-  'honolulu': 'hawaii',
-  'boston': 'boston', 'cambridge': 'boston', 'allston': 'boston',
 }
 
 function getSubdomainRegion(hostname: string): string | null {
@@ -82,6 +70,20 @@ function detectRegion(request: NextRequest): { region: string; source: 'subdomai
 }
 
 export async function middleware(request: NextRequest) {
+  // ---- 뉴욕/뉴저지 전용: www 이외의 모든 서브도메인은 www 로 보낸다 ----
+  // (예전 지역 서브도메인 dallas./la. 등과, 와일드카드 DNS 때문에 열리던 임의의
+  //  스팸성 서브도메인까지 한 번에 정리해 중복 페이지가 생기지 않게 한다.)
+  {
+    const host = (request.headers.get('host') || '').split(':')[0].toLowerCase()
+    if (host.endsWith('.edongne.com') && host !== 'www.edongne.com') {
+      const to = new URL(request.url)
+      to.hostname = 'www.edongne.com'
+      to.protocol = 'https:'
+      to.port = ''
+      return NextResponse.redirect(to, 301)
+    }
+  }
+
   const { region, source } = detectRegion(request)
   const geoRegion = getGeoRegion(request)
   const hostname = (request.headers.get('host') || '').split(':')[0]
