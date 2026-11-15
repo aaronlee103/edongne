@@ -5,7 +5,9 @@ import { NextResponse } from 'next/server'
 export async function GET(request: Request) {
   const { searchParams, origin } = new URL(request.url)
   const code = searchParams.get('code')
-  const next = searchParams.get('next') ?? '/'
+  // 로그인 후 돌아갈 곳: 쿼리 ?next → auth_next 쿠키 → 홈. 사이트 안의 경로('/…')만 허용한다.
+  const rawNext = searchParams.get('next') ?? decodeURIComponent(cookies().get('auth_next')?.value ?? '')
+  const next = /^\/(?![\/\\])/.test(rawNext) ? rawNext : '/'
 
   if (code) {
     const cookieStore = cookies()
@@ -56,7 +58,9 @@ export async function GET(request: Request) {
         }
       }
 
-      return NextResponse.redirect(`${origin}${next}`)
+      const res = NextResponse.redirect(`${origin}${next}`)
+      res.cookies.set('auth_next', '', { path: '/', maxAge: 0 })
+      return res
     }
     console.error('Auth callback error:', error.message)
   }

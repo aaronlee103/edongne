@@ -1,10 +1,18 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase-client'
 
 export default function AuthPage() {
   const [loading, setLoading] = useState<'google' | 'facebook' | null>(null)
+
+  // 로그인 후 돌아갈 곳(?next=/경로)을 10분짜리 쿠키로 기억한다. 사이트 안의 경로만 허용.
+  useEffect(() => {
+    const next = new URLSearchParams(window.location.search).get('next')
+    if (next && /^\/(?![\/\\])/.test(next)) {
+      document.cookie = `auth_next=${encodeURIComponent(next)}; path=/; max-age=600; samesite=lax`
+    }
+  }, [])
 
   const handleGoogleLogin = async () => {
     setLoading('google')

@@ -62,7 +62,7 @@ export default function NewListingPage() {
   async function checkAccess() {
     const { data: { user: authUser } } = await supabase.auth.getUser();
     if (!authUser) {
-      router.push('/login');
+      router.push('/auth?next=/listings/new');
       return;
     }
     setUser(authUser);
