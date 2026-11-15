@@ -112,35 +112,8 @@ export default function Header() {
             <Link href="/" className="text-xl font-bold tracking-tight">
               이동네
             </Link>
-            <div className="relative" ref={regionRef}>
-              <button
-                onClick={() => setRegionOpen(!regionOpen)}
-                className="flex items-center gap-0.5 text-xs text-muted hover:text-primary transition-colors px-1.5 py-0.5 rounded hover:bg-gray-50"
-              >
-                <span>{region.name_ko}</span>
-                <svg className={`w-3 h-3 transition-transform ${regionOpen ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                </svg>
-              </button>
-              {regionOpen && (
-                <div className="absolute top-full left-0 mt-1 bg-white border border-border rounded-lg shadow-lg py-1 z-50 min-w-[160px]">
-                  {allRegions.filter(r => r.active).map((r) => (
-                    <button
-                      key={r.code}
-                      onClick={() => { setRegionCode(r.code); setRegionOpen(false) }}
-                      className={`w-full text-left px-3 py-1.5 text-sm hover:bg-gray-50 transition-colors ${
-                        r.code === region.code ? 'font-medium text-primary bg-gray-50' : 'text-secondary'
-                      }`}
-                    >
-                      {r.name_ko}
-                    </button>
-                  ))}
-                  <div className="border-t border-border mt-1 pt-1 px-3 py-1.5">
-                    <span className="text-xs text-muted">더 많은 지역이 곧 오픈됩니다</span>
-                  </div>
-                </div>
-              )}
-            </div>
+            {/* 뉴욕/뉴저지 전용 — 지역 선택 없이 표시만 한다 */}
+            <span className="text-xs text-muted px-1.5 py-0.5">{region.name_ko}</span>
           </div>
 
           <nav className="hidden md:flex items-center gap-6">
